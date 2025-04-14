@@ -1,0 +1,100 @@
+{
+  "name": "aliceephemera",
+  "displayName": "Alice Ephemera",
+  "description": "Alice Ephemera 实例管理工具",
+  "version": "0.1.0",
+  "publisher": "Montia37",
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "keywords": [
+    "alice",
+    "ephemera"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Montia37/AliceEphemera.git"
+  },
+  "license": "MIT",
+  "icon": "resources/alice.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aliceephemera.showAliceMenu",
+        "title": "Alice Ephemera",
+        "category": "Alice Ephemera"
+      }
+    ],
+    "configuration": {
+      "title": "Alice Ephemera",
+      "properties": {
+        "aliceephemera.apiToken": {
+          "type": "string",
+          "description": "在 https://app.alice.ws/ephemera/console 查看 API Token"
+        },
+        "aliceephemera.plan": {
+          "type": "object",
+          "description": "推荐使用菜单修改配置",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "配置 ID"
+            },
+            "os": {
+              "type": "string",
+              "description": "系统镜像 ID"
+            },
+            "time": {
+              "type": "string",
+              "description": "时长"
+            },
+            "sshKey": {
+              "type": "string",
+              "description": "SSH Key ID（可选）"
+            }
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run package",
+    "compile": "yarn run check-types && yarn run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "yarn run check-types && yarn run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.25.1",
+    "eslint": "^9.23.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "axios": "^1.8.4"
+  }
+}
