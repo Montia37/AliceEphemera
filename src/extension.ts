@@ -13,7 +13,7 @@ import {
 import { convertUTC1ToLocalTime } from "./utils/time";
 
 const ALICE_ID = "aliceephemera";
-const SHOW_ALICE_MENU_COMMAND_ID = "ALICE_ID.showAliceMenu";
+const SHOW_ALICE_MENU_COMMAND_ID = `${ALICE_ID}.showAliceMenu`;
 
 let aliceStatusBarItem: vscode.StatusBarItem;
 

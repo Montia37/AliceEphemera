@@ -2,7 +2,7 @@
   "name": "aliceephemera",
   "displayName": "Alice Ephemera",
   "description": "Alice Ephemera 实例管理工具",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "Montia37",
   "engines": {
     "vscode": "^1.0.0"
