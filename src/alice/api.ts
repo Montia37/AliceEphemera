@@ -30,130 +30,171 @@ service.interceptors.request.use(
   }
 );
 
-// 实例列表
-export function getInstanceList(): Promise<any> {
-  return service({
-    url: "/Evo/Instance",
-    method: "GET",
-  });
-}
+/**
+ * Alice API 接口
+ * @description 该接口用于 Alice Ephemera 的 API 调用
+ */
+export const aliceApi = {
+  /**
+   * 获取实例列表
+   */
+  getInstanceList(): Promise<any> {
+    return service({
+      url: "/Evo/Instance",
+      method: "GET",
+    });
+  },
 
-// 规格列表
-export function getPlanList(): Promise<any> {
-  return service({
-    url: "/Evo/Plan",
-    method: "GET",
-  });
-}
+  /**
+   * 获取规格列表
+   */
+  getPlanList(): Promise<any> {
+    return service({
+      url: "/Evo/Plan",
+      method: "GET",
+    });
+  },
 
-// 系统镜像信息
-export function getPlanToOS(plan_id: string): Promise<any> {
-  return service({
-    url: "/Evo/PlanToOS",
-    method: "POST",
-    data: {
-      plan_id: plan_id,
-    },
-  });
-}
+  /**
+   * 获取系统镜像信息
+   */
+  getPlanToOS(plan_id: string): Promise<any> {
+    return service({
+      url: "/Evo/PlanToOS",
+      method: "POST",
+      data: {
+        plan_id: plan_id,
+      },
+    });
+  },
 
-// SSH Key 列表
-export function getSSHKeyList(): Promise<any> {
-  return service({
-    url: "/User/SSHKey",
-    method: "GET",
-  });
-}
+  /**
+   *  获取 SSH Key 列表
+   */
+  getSSHKeyList(): Promise<any> {
+    return service({
+      url: "/User/SSHKey",
+      method: "GET",
+    });
+  },
 
-// 权限信息
-export function getEVOPermissions(): Promise<any> {
-  return service({
-    url: "/User/EVOPermissions",
-    method: "GET",
-  });
-}
+  /**
+   * 获取权限信息
+   */
+  getEVOPermissions(): Promise<any> {
+    return service({
+      url: "/User/EVOPermissions",
+      method: "GET",
+    });
+  },
 
-// 账户信息
-export function getUserInfo(): Promise<any> {
-  return service({
-    url: "/User/Info",
-    method: "GET",
-  });
-}
+  /**
+   * 获取用户信息
+   */
+  getUserInfo(): Promise<any> {
+    return service({
+      url: "/User/Info",
+      method: "GET",
+    });
+  },
 
-// 创建实例
-export function createInstance(
-  product_id: string,
-  os_id: string,
-  time: string,
-  sshKey_id?: string
-): Promise<any> {
-  return service({
-    url: "/Evo/Deploy",
-    method: "POST",
-    data: {
-      product_id: product_id,
-      os_id: os_id,
-      time: time,
-      sshKey: sshKey_id,
-    },
-  });
-}
+  /**
+   * 创建实例
+   * @param product_id 规格 ID
+   * @param os_id 镜像 ID
+   * @param time 时长
+   * @param sshKey_id 密钥 ID（可选）
+   */
+  createInstance(
+    product_id: string,
+    os_id: string,
+    time: string,
+    sshKey_id?: string
+  ): Promise<any> {
+    return service({
+      url: "/Evo/Deploy",
+      method: "POST",
+      data: {
+        product_id: product_id,
+        os_id: os_id,
+        time: time,
+        sshKey: sshKey_id,
+      },
+    });
+  },
 
-// 删除实例
-export function deleteInstance(instance_id: string): Promise<any> {
-  return service({
-    url: "/Evo/Destroy",
-    method: "POST",
-    data: {
-      id: instance_id,
-    },
-  });
-}
+  /**
+   * 删除实例
+   * @param instance_id 实例 ID
+   */
+  deleteInstance(instance_id: string): Promise<any> {
+    return service({
+      url: "/Evo/Destroy",
+      method: "POST",
+      data: {
+        id: instance_id,
+      },
+    });
+  },
 
-// 延长实例使用时间
-export function renewalInstance(
-  instance_id: string,
-  time: string
-): Promise<any> {
-  return service({
-    url: "/Evo/Renewal",
-    method: "POST",
-    data: {
-      id: instance_id,
-      time: time,
-    },
-  });
-}
+  /**
+   * 延长实例时间
+   * @param instance_id 实例 ID
+   * @param time 需要延长的时间（单位：小时）
+   */
+  renewalInstance(instance_id: string, time: string): Promise<any> {
+    return service({
+      url: "/Evo/Renewal",
+      method: "POST",
+      data: {
+        id: instance_id,
+        time: time,
+      },
+    });
+  },
 
-// 控制实例电源
-export function powerInstance(
-  instance_id: string,
-  action: "boot" | "shutdown" | "restart" | "poweroff"
-): Promise<any> {
-  return service({
-    url: "/Evo/Power",
-    method: "POST",
-    data: {
-      id: instance_id,
-      action: action,
-    },
-  });
-}
+  /**
+   * 控制实例电源
+   * @param instance_id 实例 ID
+   * @param action 操作类型（boot、shutdown、restart、poweroff）
+   * boot：开机
+   * shutdown：关机
+   * restart：重启
+   * poweroff：强制关机
+   */
+  powerInstance(
+    instance_id: string,
+    action: "boot" | "shutdown" | "restart" | "poweroff"
+  ): Promise<any> {
+    return service({
+      url: "/Evo/Power",
+      method: "POST",
+      data: {
+        id: instance_id,
+        action: action,
+      },
+    });
+  },
 
-// 重新安装实例
-export function rebulidInstance(
-  instance_id: string,
-  os_id: string,
-  sshKey_id?: string
-): Promise<any> {
-  return service({
-    url: "/Evo/Rebuild",
-    method: "POST",
-    data: {
-      id: instance_id,
-      os: os_id,
-      sshKey: sshKey_id,
-    },
-  });
-}
+  /**
+   * 重装系统
+   * @param instance_id 实例 ID
+   * @param os_id 镜像 ID
+   * @param sshKey_id 密钥 ID（可选）
+   */
+  rebulidInstance(
+    instance_id: string,
+    os_id: string,
+    sshKey_id?: string
+  ): Promise<any> {
+    return service({
+      url: "/Evo/Rebuild",
+      method: "POST",
+      data: {
+        id: instance_id,
+        os: os_id,
+        sshKey: sshKey_id,
+      },
+    });
+  },
+};
