@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.4](https://github.com/Montia37/AliceEphemera/compare/v0.1.3...v0.1.4) (2025-05-04)
+
+
+### 🐛 Bug Fixes | 修复 Bug
+
+*  修复 esbuild 无法打包 .node 文件的问题 ([50450df](https://github.com/Montia37/AliceEphemera/commit/50450dfb03bfddb3e3d4803b0a978c02bdf752b5))
+
 ## [0.1.3](https://github.com/Montia37/AliceEphemera/compare/v0.1.2...v0.1.3) (2025-05-04)
 
 
@@ -14,6 +21,7 @@ All notable changes to this project will be documented in this file. See [commit
 
 * 改为使用 commit-and-tag-version 生成日志和版本控制 ([8ad2944](https://github.com/Montia37/AliceEphemera/commit/8ad2944b0f3a78b18970abcb137a20245d6ffbc7))
 * 添加 CHANGELOG ([93b4647](https://github.com/Montia37/AliceEphemera/commit/93b464773843be06196cfac83c0e35777e7c9cc6))
+* **release:** 0.1.3 ([f91bf78](https://github.com/Montia37/AliceEphemera/commit/f91bf7831c166dc079880d6ca4d7aa11c174482e))
 
 ## [0.1.2](https://github.com/Montia37/AliceEphemera/compare/v0.1.1...v0.1.2) (2025-05-04)
 
