@@ -8,7 +8,7 @@ import * as vscode from "vscode";
  *
  * @param host 要连接的主机名或 IP 地址。
  * @param port SSH 端口号（默认为 22）。
- * @param totalTimeoutMs 持续尝试的最大时间（毫秒，默认为 60000ms = 60 秒）。
+ * @param totalTimeoutMs 持续尝试的最大时间（毫秒，默认为 120000ms = 120 秒）。
  * @param retryIntervalMs 网络错误后重试连接的等待时间（毫秒，默认为 2000ms）。
  * @returns 一个 Promise，如果服务器在超时时间内可达且响应，则解析为 `true`，否则解析为 `false`。
  */
@@ -16,7 +16,7 @@ export async function checkServerSSH(
   title: string,
   host: string,
   port: number = 22,
-  totalTimeoutMs: number = 60000,
+  totalTimeoutMs: number = 120000,
   retryIntervalMs: number = 2000
 ): Promise<boolean> {
   // 使用 withProgress 显示进度通知

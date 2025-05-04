@@ -56,6 +56,10 @@ export async function showCreateInstanceMenu() {
   // 创建 Quick Pick Item
   const createItems: vscode.QuickPickItem[] = [
     {
+      label: `$(refresh) 刷新配置`,
+      detail: "已创建实例，点击刷新配置",
+    },
+    {
       label: `$(plus) 创建实例`,
       detail: "创建新的实例",
     },
@@ -78,6 +82,10 @@ export async function showCreateInstanceMenu() {
   });
   if (selectedItem) {
     switch (selectedItem.label) {
+      case `$(refresh) 刷新配置`: {
+        updateConfig(); // 刷新配置
+        break;
+      }
       case `$(plus) 创建实例`: {
         const { status, plan } = await createInstanceMultiStep();
         if (status === "completed" && plan) {

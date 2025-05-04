@@ -43,6 +43,7 @@ const API_TOKEN = workspace
 const DEFAULT_PLAN = workspace.getConfiguration(ALICE_ID).get("plan") as Plan;
 
 export const CONFIG = {
+  init: true,
   apiToken: API_TOKEN,
   defaultPlan: DEFAULT_PLAN,
   evoPermissions: {} as any,

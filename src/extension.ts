@@ -20,8 +20,6 @@ export function activate(context: vscode.ExtensionContext) {
   // 设置当状态栏项被点击时要执行的命令
   aliceStatusBarItem.command = SHOW_ALICE_MENU_COMMAND_ID;
 
-  updateConfig();
-
   // --- 2. 显示 Quick Pick 菜单 ---
   const showMenuCommand = vscode.commands.registerCommand(
     SHOW_ALICE_MENU_COMMAND_ID,
@@ -52,8 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposableConfigListener);
 
-  // 定时更新状态栏
-  setInterval(updateStatusBar, 60000); // 每分钟更新一次
+  updateStatusBar(); // 初始化状态栏
 }
 
 // 插件停用时调用的函数

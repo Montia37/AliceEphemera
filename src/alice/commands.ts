@@ -14,6 +14,14 @@ import {
  * 显示 Alice Ephemera 菜单
  */
 export async function showMenu() {
+  if (CONFIG.init) {
+    await updateConfig(); // 更新所有配置
+    CONFIG.init = false; // 设置为 false，表示初始化完成
+    updateStatusBar(); // 更新状态栏
+    // 定时更新状态栏
+    setInterval(updateStatusBar, 60000); // 每分钟更新一次
+    return; // 初始化完成后直接返回，不再执行后续代码
+  }
   if (!CONFIG.apiToken) {
     showAddApiTokenMenu();
   } else if (CONFIG.instanceList && CONFIG.instanceList.length > 0) {
@@ -36,6 +44,12 @@ export async function openSettings() {
  * 更新状态栏信息
  */
 export async function updateStatusBar() {
+  if (CONFIG.init) {
+    aliceStatusBarItem.text = `$(server) Alice:点击加载`;
+    aliceStatusBarItem.tooltip = new vscode.MarkdownString(`点击刷新配置`);
+    aliceStatusBarItem.show();
+    return; // 如果配置未初始化，直接返回
+  }
   if (!CONFIG.apiToken) {
     // 更新状态栏文本和 Tooltip
     aliceStatusBarItem.text = `$(server) Alice:未配置ApiToken`;
@@ -119,113 +133,124 @@ export async function updateConfig(
     updateStatusBar(); // API Token 为空时更新状态栏
     return;
   }
-  if (flag === "instance" || flag === "all") {
-    // 获取实例列表
-    await aliceApi
-      .getInstanceList()
-      .then((response) => {
-        const instanceList = response.data?.data;
-        if (instanceList && instanceList.length > 0) {
-          instanceList.forEach((instance: any) => {
-            instance.creation_at = convertUTC1ToLocalTime(
-              instance.creation_at
-            ).toLocaleString();
-            instance.expiration_at = convertUTC1ToLocalTime(
-              instance.expiration_at
-            ).toLocaleString();
-          });
-        }
-        updateStateConfig({ instanceList: instanceList || [] }); // 更新状态
-      })
-      .catch((error) => {
-        if (error.response && error.response.status === 401) {
-          vscode.window
-            .showErrorMessage("认证失败：请检查 apiToken", "打开设置")
-            .then((selection) => {
-              if (selection === "打开设置") {
-                openSettings();
-              }
-            });
-          return; // 直接返回，不再执行后续代码
-        }
-        vscode.window
-          .showErrorMessage("获取实例列表失败，请检查网络连接", "重试")
-          .then((selection) => {
-            if (selection === "重试") {
-              updateConfig(flag);
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: "正在加载配置...",
+      cancellable: false,
+    },
+    async (progress) => {
+      if (flag === "instance" || flag === "all") {
+        // 获取实例列表
+        await aliceApi
+          .getInstanceList()
+          .then((response) => {
+            const instanceList = response.data?.data;
+            if (instanceList && instanceList.length > 0) {
+              instanceList.forEach((instance: any) => {
+                instance.creation_at = convertUTC1ToLocalTime(
+                  instance.creation_at
+                ).toLocaleString();
+                instance.expiration_at = convertUTC1ToLocalTime(
+                  instance.expiration_at
+                ).toLocaleString();
+              });
             }
+            updateStateConfig({ instanceList: instanceList || [] }); // 更新状态
+          })
+          .catch((error) => {
+            if (error.response && error.response.status === 401) {
+              vscode.window
+                .showErrorMessage("认证失败：请检查 apiToken", "打开设置")
+                .then((selection) => {
+                  if (selection === "打开设置") {
+                    openSettings();
+                  }
+                });
+              return; // 直接返回，不再执行后续代码
+            }
+            vscode.window
+              .showErrorMessage("获取实例列表失败，请检查网络连接", "重试")
+              .then((selection) => {
+                if (selection === "重试") {
+                  updateConfig(flag);
+                }
+              });
+            console.error("Error fetching instance list:", error);
+            // throw error; // 不再抛出错误，避免中断后续配置获取
           });
-        console.error("Error fetching instance list:", error);
-        // throw error; // 不再抛出错误，避免中断后续配置获取
-      });
-  }
+      }
 
-  if (flag === "all") {
-    // 获取 EVO 可用权限
-    await aliceApi
-      .getEVOPermissions()
-      .then((response) => {
-        if (response.status === 200) {
-          const evoPermissions = response.data?.data;
-          if (evoPermissions?.allow_packages) {
-            evoPermissions.allow_packages =
-              evoPermissions.allow_packages.split("|");
-          }
-          updateStateConfig({ evoPermissions: evoPermissions || {} }); // 更新状态
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching EVO permissions:", error);
-        // throw error;
-      });
+      if (flag === "all") {
+        // 获取 EVO 可用权限
+        await aliceApi
+          .getEVOPermissions()
+          .then((response) => {
+            if (response.status === 200) {
+              const evoPermissions = response.data?.data;
+              if (evoPermissions?.allow_packages) {
+                evoPermissions.allow_packages =
+                  evoPermissions.allow_packages.split("|");
+              }
+              updateStateConfig({ evoPermissions: evoPermissions || {} }); // 更新状态
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching EVO permissions:", error);
+            // throw error;
+          });
 
-    // 获取计划列表
-    await aliceApi
-      .getPlanList()
-      .then((response) => {
-        if (response.status === 200) {
-          let planList = response.data?.data;
-          if (CONFIG.evoPermissions.allow_packages && planList) {
-            planList = planList.filter((plan: any) =>
-              CONFIG.evoPermissions.allow_packages.includes(plan.id.toString())
-            );
-          }
-          if (planList) {
-            planList.forEach((plan: any) => {
-              plan.os = Object.values(plan.os).flatMap(
-                (group: any) => group.os
-              );
-            });
-          }
-          updateStateConfig({ planList: planList || [] }); // 更新状态
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching plan list:", error);
-        // throw error;
-      });
+        // 获取计划列表
+        await aliceApi
+          .getPlanList()
+          .then((response) => {
+            if (response.status === 200) {
+              let planList = response.data?.data;
+              if (CONFIG.evoPermissions.allow_packages && planList) {
+                planList = planList.filter((plan: any) =>
+                  CONFIG.evoPermissions.allow_packages.includes(
+                    plan.id.toString()
+                  )
+                );
+              }
+              if (planList) {
+                planList.forEach((plan: any) => {
+                  plan.os = Object.values(plan.os).flatMap(
+                    (group: any) => group.os
+                  );
+                });
+              }
+              updateStateConfig({ planList: planList || [] }); // 更新状态
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching plan list:", error);
+            // throw error;
+          });
 
-    // 获取 SSH Key 列表
-    await aliceApi
-      .getSSHKeyList()
-      .then((response) => {
-        if (response.status === 200) {
-          const sshKeyList = response.data?.data;
-          if (sshKeyList && sshKeyList.length > 0) {
-            sshKeyList.forEach((sshKey: any) => {
-              sshKey.created_at = convertUTC1ToLocalTime(
-                sshKey.created_at
-              ).toLocaleString();
-            });
-          }
-          updateStateConfig({ sshKeyList: sshKeyList || [] }); // 更新状态
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching SSH Key list:", error);
-        // throw error;
-      });
-  }
+        // 获取 SSH Key 列表
+        await aliceApi
+          .getSSHKeyList()
+          .then((response) => {
+            if (response.status === 200) {
+              const sshKeyList = response.data?.data;
+              if (sshKeyList && sshKeyList.length > 0) {
+                sshKeyList.forEach((sshKey: any) => {
+                  sshKey.created_at = convertUTC1ToLocalTime(
+                    sshKey.created_at
+                  ).toLocaleString();
+                });
+              }
+              updateStateConfig({ sshKeyList: sshKeyList || [] }); // 更新状态
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching SSH Key list:", error);
+            // throw error;
+          });
+      }
+    }
+  );
 
   if (flag === "defaultPlan") {
     updateStateConfig({
