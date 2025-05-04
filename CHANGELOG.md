@@ -2,12 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.5](https://github.com/Montia37/AliceEphemera/compare/v0.1.4...v0.1.5) (2025-05-04)
+
+
+### 🐛 Bug Fixes | 修复 Bug
+
+*  ssh2 标记为 external 导致无法正常运行 ([3e6f432](https://github.com/Montia37/AliceEphemera/commit/3e6f432875c6daa02ce1149e9aa3000d62e33fd9))
+
+
+### ⚡ Performance Improvements | 改善性能的代码变更
+
+* 优化状态栏加载 ([efc5927](https://github.com/Montia37/AliceEphemera/commit/efc59271e0846dfab6d8fdb5122441ab1ca05c42))
+
 ## [0.1.4](https://github.com/Montia37/AliceEphemera/compare/v0.1.3...v0.1.4) (2025-05-04)
 
 
 ### 🐛 Bug Fixes | 修复 Bug
 
 *  修复 esbuild 无法打包 .node 文件的问题 ([50450df](https://github.com/Montia37/AliceEphemera/commit/50450dfb03bfddb3e3d4803b0a978c02bdf752b5))
+
+
+### 🔧 chore | 其他不修改 src 或测试文件的变更
+
+* **release:** 0.1.4 ([1b5ed0a](https://github.com/Montia37/AliceEphemera/commit/1b5ed0a8ca963da8b0650b4cf730f7a8621aa80a))
 
 ## [0.1.3](https://github.com/Montia37/AliceEphemera/compare/v0.1.2...v0.1.3) (2025-05-04)
 
