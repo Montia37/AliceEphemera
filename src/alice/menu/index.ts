@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 import { aliceApi } from "../api";
-import { ALICE_ID, CONFIG } from "../state";
+import { Plan, ALICE_ID, CONFIG, updateStateConfig } from "../state";
 import {
   createInstanceMultiStep,
   rebulidInstanceMultiStep,
 } from "./instanceMultiStep";
-import { updateConfig, openSettings } from "../commands";
+import { updateConfig, openSettings, updateStatusBar } from "../commands";
+import { checkServerSSH } from "../../utils/checkSsh";
+import { convertUTC1ToLocalTime } from "../../utils/time";
 
 /**
  * 显示 API Token 输入框
@@ -79,34 +81,13 @@ export async function showCreateInstanceMenu() {
       case `$(plus) 创建实例`: {
         const { status, plan } = await createInstanceMultiStep();
         if (status === "completed" && plan) {
-          aliceApi
-            .createInstance(plan.id, plan.os, plan.time, plan.sshKey)
-            .then(() => {
-              vscode.window.showInformationMessage("实例创建成功");
-              updateConfig("instance"); // 创建成功后更新实例列表
-            })
-            .catch((err) => {
-              vscode.window.showErrorMessage(`实例创建失败: ${err}`);
-            });
+          createInstance(plan);
         }
         break;
       }
       case `$(plus) 以默认配置创建`: {
         if (default_plan_config) {
-          aliceApi
-            .createInstance(
-              CONFIG.defaultPlan.id,
-              CONFIG.defaultPlan.os,
-              CONFIG.defaultPlan.time,
-              CONFIG.defaultPlan.sshKey
-            )
-            .then(() => {
-              vscode.window.showInformationMessage("实例创建成功");
-              updateConfig("instance"); // 创建成功后更新实例列表
-            })
-            .catch((err) => {
-              vscode.window.showErrorMessage(`实例创建失败: ${err}`);
-            });
+          createInstance(CONFIG.defaultPlan);
         } else {
           const { status, plan } = await createInstanceMultiStep();
           // 更新默认配置
@@ -139,6 +120,35 @@ export async function showCreateInstanceMenu() {
         break;
       }
     }
+  }
+}
+
+/**
+ * 创建实例
+ * @param plan - 实例规格
+ */
+async function createInstance(plan: Plan) {
+  if (plan) {
+    aliceApi
+      .createInstance(plan.id, plan.os, plan.time, plan.sshKey)
+      .then(async (response) => {
+        const instance = response.data?.data;
+        instance.creation_at = convertUTC1ToLocalTime(
+          instance.creation_at
+        ).toLocaleString();
+        instance.expiration_at = convertUTC1ToLocalTime(
+          instance.expiration_at
+        ).toLocaleString();
+        updateStateConfig({ instanceList: [instance] });
+        if (await checkServerSSH("正在创建实例", instance.hostname)) {
+          vscode.window.showInformationMessage("实例创建成功，SSH 连接正常");
+          updateStatusBar();
+        }
+        // vscode.window.showInformationMessage("实例创建成功");
+      })
+      .catch((err) => {
+        vscode.window.showErrorMessage(`实例创建失败: ${err}`);
+      });
   }
 }
 
@@ -268,9 +278,15 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
   if (status === "completed" && rebulidInfo) {
     aliceApi
       .rebulidInstance(instanceId, rebulidInfo.os, rebulidInfo.sshKey)
-      .then(() => {
-        vscode.window.showInformationMessage("实例重装成功");
-        updateConfig("instance"); // 重装成功后更新实例列表
+      .then(async (response) => {
+        if (response.data?.status === 200) {
+          if (
+            await checkServerSSH("正在重装系统", response.data?.data?.hostname)
+          ) {
+            vscode.window.showInformationMessage("实例重装成功，SSH 连接正常");
+            updateConfig("instance");
+          }
+        }
       })
       .catch((err) => {
         vscode.window.showErrorMessage(`实例重装失败: ${err}`);

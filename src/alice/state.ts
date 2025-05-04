@@ -1,6 +1,16 @@
 import { workspace } from "vscode";
 
 /**
+ * 插件唯一标识符 ID
+ */
+export const ALICE_ID = "aliceephemera";
+
+/**
+ * 显示 Alice 菜单的命令 ID
+ */
+export const SHOW_ALICE_MENU_COMMAND_ID = `${ALICE_ID}.showAliceMenu`;
+
+/**
  * 实例规格接口
  * @property {string} id - 规格 ID
  * @property {string} os - 操作系统 ID
@@ -25,11 +35,6 @@ export interface RebuildInfo {
   os: string;
   sshKey: string;
 }
-
-/**
- * 插件唯一标识符 ID
- */
-export const ALICE_ID = "aliceephemera";
 
 const API_TOKEN = workspace
   .getConfiguration(ALICE_ID)
