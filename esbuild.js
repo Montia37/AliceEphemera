@@ -35,12 +35,15 @@ async function main() {
     sourcesContent: false,
     platform: "node",
     outfile: "dist/extension.js",
-    external: ["vscode", "cpu-features", "ssh2"],
+    external: ["vscode"],
     logLevel: "silent",
     plugins: [
       /* add to the end of plugins array */
       esbuildProblemMatcherPlugin,
     ],
+    loader: {
+      ".node": "file",
+    },
   });
   if (watch) {
     await ctx.watch();
