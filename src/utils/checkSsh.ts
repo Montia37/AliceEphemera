@@ -24,10 +24,9 @@ export async function checkServerSSH(
     {
       location: vscode.ProgressLocation.Notification,
       title: title,
-      cancellable: false, // 如果需要，可以考虑使其可取消
+      cancellable: false,
     },
     async (progress) => {
-      // 将核心逻辑包装在 Promise 中以管理异步解析
       return new Promise<boolean>((resolvePromise) => {
         let client: Client | null = null;
         let timeoutTimer: NodeJS.Timeout | null = null;
@@ -35,17 +34,13 @@ export async function checkServerSSH(
         const startTime = Date.now();
 
         const cleanup = (success: boolean) => {
-          if (resolved) return; // 防止重复解析
+          if (resolved) {
+            return;
+          } // 防止重复解析
           resolved = true;
 
-          if (client) {
-            try {
-              client.end();
-            } catch (e) {
-              // 清理期间忽略错误
-            }
-            client = null;
-          }
+          client?.end();
+          client = null;
           if (timeoutTimer) {
             clearTimeout(timeoutTimer);
             timeoutTimer = null;
@@ -65,14 +60,16 @@ export async function checkServerSSH(
         }, totalTimeoutMs);
 
         const attemptConnect = (attemptNum: number) => {
-          if (resolved) return; // 如果已解析则停止
+          if (resolved) {
+            return;
+          } // 如果已解析则停止
 
           progress.report({
             message: `尝试 #${attemptNum} 连接 ${host}:${port}...`,
           });
-          console.log(
-            `[SSH 检查] 尝试 #${attemptNum} 连接到 ${host}:${port}...`
-          );
+          // console.log(
+          //   `[SSH 检查] 尝试 #${attemptNum} 连接到 ${host}:${port}...`
+          // );
 
           client = new Client();
           let attemptResolved = false; // 跟踪此特定尝试处理程序的解析状态
@@ -81,9 +78,11 @@ export async function checkServerSSH(
 
           // 成功：已连接并准备就绪（服务器肯定已启动并使用 SSH 协议）
           client.once("ready", () => {
-            if (attemptResolved || resolved) return;
+            if (attemptResolved || resolved) {
+              return;
+            }
             attemptResolved = true;
-            console.log(`[SSH 检查] 连接成功 (ready 事件) 到 ${host}:${port}`);
+            // console.log(`[SSH 检查] 连接成功 (ready 事件) 到 ${host}:${port}`);
             progress.report({ message: `连接成功!` });
             cleanup(true); // 解析为成功
           });
@@ -92,7 +91,9 @@ export async function checkServerSSH(
           client.once(
             "error",
             (err: Error & { code?: string; level?: string }) => {
-              if (attemptResolved || resolved) return;
+              if (attemptResolved || resolved) {
+                return;
+              }
               attemptResolved = true;
 
               // 将身份验证失败视为成功（服务器可达）
@@ -104,9 +105,9 @@ export async function checkServerSSH(
                 err.message.includes("keyboard-interactive") || // 常见的身份验证提示错误
                 err.level === "client-authentication" // 到达身份验证阶段的另一个指标
               ) {
-                console.log(
-                  `[SSH 检查] ${host}:${port} 出现身份验证提示或失败 - 服务器可达。`
-                );
+                // console.log(
+                //   `[SSH 检查] ${host}:${port} 出现身份验证提示或失败 - 服务器可达。`
+                // );
                 progress.report({ message: `服务器可达 (需要认证)` });
                 cleanup(true); // 解析为成功（服务器存活）
                 return;
