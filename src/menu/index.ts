@@ -1,13 +1,17 @@
 import * as vscode from "vscode";
-import { aliceApi } from "../api";
-import { Plan, ALICE_ID, CONFIG, updateStateConfig } from "../state";
+import { aliceApi } from "../alice/api";
+import { Plan, ALICE_ID, CONFIG, updateStateConfig } from "../alice/config";
 import {
   createInstanceMultiStep,
   rebulidInstanceMultiStep,
 } from "./instanceMultiStep";
-import { updateConfig, openSettings, updateStatusBar } from "../commands";
-import { checkServerSSH } from "../../utils/checkSsh";
-import { convertUTC1ToLocalTime } from "../../utils/time";
+import {
+  updateConfig,
+  openSettings,
+  updateStatusBar,
+  aliceService,
+} from "../commands";
+import { convertUTC1ToLocalTime } from "../utils/time";
 
 /**
  * 显示 API Token 输入框
@@ -148,11 +152,36 @@ async function createInstance(plan: Plan) {
           instance.expiration_at
         ).toLocaleString();
         updateStateConfig({ instanceList: [instance] });
-        if (await checkServerSSH("正在创建实例", instance.hostname)) {
-          vscode.window.showInformationMessage("实例创建成功，SSH 连接正常");
-          updateStatusBar();
-        }
-        // vscode.window.showInformationMessage("实例创建成功");
+
+        await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `正在创建实例 ${instance.id}...`,
+            cancellable: false,
+          },
+          async (progress) => {
+            // 轮询实例状态，直到状态为 'running'
+            let instanceState = await aliceService.getInstanceState(
+              instance.id
+            );
+            let attempts = 0;
+            const maxAttempts = 60; // 假设最多尝试60次，每次间隔2秒，总共2分钟
+            const delay = (ms: number) =>
+              new Promise((res) => setTimeout(res, ms));
+
+            while (
+              instanceState?.state?.state !== "running" &&
+              attempts < maxAttempts
+            ) {
+              await delay(2000); // 等待2秒
+              instanceState = await aliceService.getInstanceState(instance.id);
+              attempts++;
+            }
+          }
+        );
+        vscode.window.showInformationMessage("实例创建成功");
+        updateConfig("instance"); // 创建成功后更新实例列表
+        updateStatusBar(); // 更新状态栏
       })
       .catch((err) => {
         vscode.window.showErrorMessage(`实例创建失败: ${err}`);
@@ -165,7 +194,16 @@ async function createInstance(plan: Plan) {
  * @param instanceList - 实例列表
  */
 export async function showControlInstanceMenu(instanceList: any[]) {
+  const instanceState = CONFIG.instanceState;
   const items: vscode.QuickPickItem[] = [
+    {
+      label: `$(preview) 实例状态 | 点击刷新`,
+      detail: `状态: ${instanceState?.state?.state || "未知"} | cpu: ${
+        instanceState?.state?.cpu || "未知"
+      }% | 可用内存: ${
+        instanceState?.state?.memory?.memavailable || "未知"
+      } | 总流量: ${instanceState?.state?.traffic?.total || "未知"}↑↓ GB`,
+    },
     {
       label: `$(trash) 删除实例`,
       detail: "删除当前实例",
@@ -202,6 +240,24 @@ export async function showControlInstanceMenu(instanceList: any[]) {
     const instanceId = instanceList[0].id.toString();
     const instancePlanId = instanceList[0].plan_id.toString();
     switch (selectedItem.label) {
+      case `$(preview) 实例状态 | 点击刷新`:
+        // 刷新实例状态
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `实例状态已刷新`,
+            cancellable: false,
+          },
+          (progress) => {
+            updateStatusBar();
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(undefined);
+              }, 2000); // 消息显示 2 秒后自动关闭
+            });
+          }
+        );
+        break;
       case `$(trash) 删除实例`:
         deleteInstanceItems(instanceId);
         break;
@@ -288,12 +344,36 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
       .rebulidInstance(instanceId, rebulidInfo.os, rebulidInfo.sshKey)
       .then(async (response) => {
         if (response.data?.status === 200) {
-          if (
-            await checkServerSSH("正在重装系统", response.data?.data?.hostname)
-          ) {
-            vscode.window.showInformationMessage("实例重装成功，SSH 连接正常");
-            updateConfig("instance");
-          }
+          // 轮询实例状态，直到状态为 'running'
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `正在重装实例 ${instanceId}...`,
+              cancellable: false,
+            },
+            async (progress) => {
+              // 轮询实例状态，直到状态为 'running'
+              let instanceState = await aliceService.getInstanceState(
+                instanceId
+              );
+              let attempts = 0;
+              const maxAttempts = 60; // 假设最多尝试60次，每次间隔2秒，总共2分钟
+              const delay = (ms: number) =>
+                new Promise((res) => setTimeout(res, ms));
+
+              while (
+                instanceState?.state?.state !== "running" &&
+                attempts < maxAttempts
+              ) {
+                await delay(2000); // 等待2秒
+                instanceState = await aliceService.getInstanceState(instanceId);
+                attempts++;
+              }
+            }
+          );
+          vscode.window.showInformationMessage("实例重装成功");
+          updateConfig("instance"); // 重装成功后更新实例列表
+          updateStatusBar(); // 更新状态栏
         }
       })
       .catch((err) => {

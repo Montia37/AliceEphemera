@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { updateConfig, updateStatusBar, showMenu } from "./alice/commands";
+import { updateConfig, updateStatusBar, showMenu } from "./commands";
 import {
   ALICE_ID,
   SHOW_ALICE_MENU_COMMAND_ID,
   Plan,
   updateStateConfig,
-} from "./alice/state";
+} from "./alice/config";
 
 export let aliceStatusBarItem: vscode.StatusBarItem;
 

@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
-import { workspace } from "vscode";
-
 const API_URL = "https://app.alice.ws/cli/v1";
+
+let currentApiToken: string | undefined;
 
 const service: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -14,11 +14,8 @@ const service: AxiosInstance = axios.create({
 // 添加请求拦截器，动态注入最新的 API Token
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const API_TOKEN = workspace
-      .getConfiguration("aliceephemera")
-      .get<string>("apiToken");
-    if (API_TOKEN) {
-      config.headers["KP-APIToken"] = API_TOKEN;
+    if (currentApiToken) {
+      config.headers["KP-APIToken"] = currentApiToken;
     } else {
       delete config.headers["KP-APIToken"];
       console.warn("Alice Ephemera API Key is not configured.");
@@ -29,6 +26,21 @@ service.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * 设置 API Token
+ * @param token API Token
+ */
+export function setApiToken(token: string | undefined) {
+  currentApiToken = token;
+}
+
+/**
+ * 清除 API Token
+ */
+export function clearApiToken() {
+  currentApiToken = undefined;
+}
 
 /**
  * Alice API 接口
@@ -52,6 +64,20 @@ export const aliceApi = {
     return service({
       url: "/Evo/Plan",
       method: "GET",
+    });
+  },
+
+  /**
+   * 获取实例状态
+   * @param instance_id 实例 ID
+   */
+  getInstanceState(instance_id: string): Promise<any> {
+    return service({
+      url: "/Evo/State",
+      method: "POST",
+      data: {
+        id: instance_id,
+      },
     });
   },
 

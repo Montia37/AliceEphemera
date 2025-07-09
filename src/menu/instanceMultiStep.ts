@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Plan, RebuildInfo, CONFIG } from "../state"; // 引入配置文件
+import { Plan, RebuildInfo, CONFIG } from "../alice/config"; // 引入配置文件
 
 /**
  * 创建实例的状态机

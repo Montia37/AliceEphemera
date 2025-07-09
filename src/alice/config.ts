@@ -24,6 +24,24 @@ export interface Plan {
   sshKey: string;
 }
 
+export interface InstanceState {
+  status: string;
+  state: {
+    state: string;
+    cpu: number;
+    memory: {
+      memtotal: string;
+      memfree: string;
+      memavailable: string;
+    };
+    traffic: {
+      in: number;
+      out: number;
+      total: number;
+    };
+  };
+}
+
 /**
  * 实例重建信息接口
  * @property {string} planId - 规格 ID
@@ -50,6 +68,8 @@ export const CONFIG = {
   instanceList: [] as any[],
   planList: [] as any[],
   sshKeyList: [] as any[],
+  instanceState: {} as InstanceState,
+  doNotRemindExpiration: false,
 };
 
 /**
