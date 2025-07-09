@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.0.1](https://github.com/Montia37/AliceEphemera/compare/v1.0.0...v1.0.1) (2025-07-09)
+
+## [1.0.0](https://github.com/Montia37/AliceEphemera/compare/v0.1.5...v1.0.0) (2025-07-09)
+
+
+### ✨ Features | 新功能
+
+* 适配 State API，优化代码结构 ([7394394](https://github.com/Montia37/AliceEphemera/commit/7394394d46f576a0ca08014df14a4fab6510f02a))
+
 ## [0.1.5](https://github.com/Montia37/AliceEphemera/compare/v0.1.4...v0.1.5) (2025-05-04)
 
 
@@ -13,6 +22,11 @@ All notable changes to this project will be documented in this file. See [commit
 ### ⚡ Performance Improvements | 改善性能的代码变更
 
 * 优化状态栏加载 ([efc5927](https://github.com/Montia37/AliceEphemera/commit/efc59271e0846dfab6d8fdb5122441ab1ca05c42))
+
+
+### 🔧 chore | 其他不修改 src 或测试文件的变更
+
+* **release:** 0.1.5 ([a93f569](https://github.com/Montia37/AliceEphemera/commit/a93f5696d19cb40a90a642b3f4338fe414aada14))
 
 ## [0.1.4](https://github.com/Montia37/AliceEphemera/compare/v0.1.3...v0.1.4) (2025-05-04)
 
