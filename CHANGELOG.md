@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.0.2](https://github.com/Montia37/AliceEphemera/compare/v1.0.1...v1.0.2) (2025-07-13)
+
+
+### ♻️ Code Refactoring | 代码重构
+
+* 优化状态栏更新逻辑，简化实例状态处理 ([2ae6bd7](https://github.com/Montia37/AliceEphemera/commit/2ae6bd73ac04efedcaa17684ee6e78a94eb17b12))
+
 ## [1.0.1](https://github.com/Montia37/AliceEphemera/compare/v1.0.0...v1.0.1) (2025-07-09)
+
+
+### 🔧 chore | 其他不修改 src 或测试文件的变更
+
+* **release:** 1.0.1 ([9613484](https://github.com/Montia37/AliceEphemera/commit/9613484d92e94e80f86fd6090abff1c1f4625cda))
 
 ## [1.0.0](https://github.com/Montia37/AliceEphemera/compare/v0.1.5...v1.0.0) (2025-07-09)
 
