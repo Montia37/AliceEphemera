@@ -245,11 +245,7 @@ export class AliceService {
       }
 
       if (timeLeft <= 0) {
-        updateStateConfig({
-          instanceList: [],
-          instanceState: {} as InstanceState,
-          doNotRemindExpiration: true,
-        });
+        this.updateConfig("instance"); // 更新实例列表
         updateStatusBar();
         this.dependencies.showErrorMessage(`实例 ${instance.id} 已被删除！`);
       }
@@ -266,31 +262,27 @@ export class AliceService {
     try {
       const response = await aliceApi.getInstanceState(instanceId);
       if (response.status === 200 && response.data?.data) {
-        const instanceInfo = response.data.data;
-        if (
-          instanceInfo.status === "complete" &&
-          instanceInfo.state?.state === "running"
-        ) {
+        const instanceInfo = response.data.data as InstanceState;
+        if (instanceInfo.status === "complete") {
           const { memory, traffic } = instanceInfo.state;
 
           const formatMemory = (mem: string) =>
-            `${(parseInt(mem, 10) / (1024 * 1024)).toFixed(2)} GB`;
+            (parseInt(mem, 10) / (1024 * 1024)).toFixed(2);
 
-          const bytesToMB = (bytes: number) =>
-            (bytes / (1024 * 1024 * 1024)).toFixed(2);
+          const bytesToGB = (bytes: number) =>
+            Number((bytes / (1024 * 1024 * 1024)).toFixed(2));
 
           memory.memtotal = formatMemory(memory.memtotal);
           memory.memfree = formatMemory(memory.memfree);
           memory.memavailable = formatMemory(memory.memavailable);
 
-          traffic.in = bytesToMB(traffic.in);
-          traffic.out = bytesToMB(traffic.out);
-          traffic.total = bytesToMB(traffic.total);
-
-          return instanceInfo as InstanceState;
+          traffic.in = bytesToGB(traffic.in);
+          traffic.out = bytesToGB(traffic.out);
+          traffic.total = bytesToGB(traffic.total);
         }
+
+        return instanceInfo;
       }
-      return undefined;
     } catch (error: any) {
       this.dependencies.showErrorMessage(
         `获取实例状态失败: ${error.message || error}`

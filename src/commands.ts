@@ -9,6 +9,9 @@ import {
 } from "./menu";
 import { AliceService } from "./alice/aliceService";
 
+let lastStatusBarText: string | undefined;
+let lastStatusBarTooltip: vscode.MarkdownString | string | undefined;
+
 export const aliceService = new AliceService({
   getApiToken: () =>
     vscode.workspace.getConfiguration(ALICE_ID).get<string>("apiToken"),
@@ -68,18 +71,30 @@ export async function openSettings() {
  */
 export async function updateStatusBar() {
   if (CONFIG.init) {
-    aliceStatusBarItem.text = `$(server) Alice:点击加载`;
-    aliceStatusBarItem.tooltip = new vscode.MarkdownString(`点击刷新配置`);
-    aliceStatusBarItem.show();
+    const newText = `$(server) Alice:点击加载`;
+    const newTooltip = new vscode.MarkdownString(`点击刷新配置`);
+    if (
+      newText !== lastStatusBarText ||
+      newTooltip.value !==
+        (lastStatusBarTooltip as vscode.MarkdownString)?.value
+    ) {
+      aliceStatusBarItem.text = newText;
+      aliceStatusBarItem.tooltip = newTooltip;
+      lastStatusBarText = newText;
+      lastStatusBarTooltip = newTooltip;
+    }
     return; // 如果配置未初始化，直接返回
   }
+
+  let newText: string;
+  let newTooltip: vscode.MarkdownString | string;
+
   if (!CONFIG.apiToken) {
     // 更新状态栏文本和 Tooltip
-    aliceStatusBarItem.text = `$(server) Alice:未配置ApiToken`;
-    aliceStatusBarItem.tooltip = new vscode.MarkdownString(`
+    newText = `$(server) Alice:未配置ApiToken`;
+    newTooltip = new vscode.MarkdownString(`
 请在 [https://app.alice.ws/ephemera/console](https://app.alice.ws/ephemera/console) 获取ApiToken\n
 点击设置 ApiToken`);
-    aliceStatusBarItem.show();
   } else if (CONFIG.instanceList && CONFIG.instanceList.length > 0) {
     // 获取第一个实例的信息
     const instance = CONFIG.instanceList[0];
@@ -111,7 +126,7 @@ export async function updateStatusBar() {
 | **创建时间:** | ${instance.creation_at} |
 | **到期时间:** | ${instance.expiration_at} |
 | **剩余时间:** | ${hours}h ${minutes}m |
-| **状态:** | ${instanceState?.state?.state || "暂不可获取"} |
+| **状态:** | ${instanceState?.state?.state || "未知"} |
 | **系统:** | ${instance.os} |
 | **CPU:** | 占用：${instanceState?.state?.cpu}% / ${instance.cpu} 核 |
 | **内存:** | 可用：${instanceState?.state?.memory?.memavailable} / ${
@@ -125,14 +140,25 @@ export async function updateStatusBar() {
 [**官网查看实例详情**](https://app.alice.ws/console/evo?id=${instance.uid}) |`);
     instanceInfo.isTrusted = true;
     // 更新状态栏文本和 Tooltip
-    aliceStatusBarItem.text = `$(server) Alice: ${hours}h ${minutes}m`;
-    aliceStatusBarItem.tooltip = instanceInfo;
-    aliceStatusBarItem.show();
+    newText = `$(server) Alice: ${hours}h ${minutes}m`;
+    newTooltip = instanceInfo;
   } else {
     // 更新状态栏文本和 Tooltip
-    aliceStatusBarItem.text = `$(server) Alice: 暂无实例`;
-    aliceStatusBarItem.tooltip = "点击创建实例";
-    aliceStatusBarItem.show();
+    newText = `$(server) Alice: 暂无实例`;
+    newTooltip = "点击创建实例";
+  }
+
+  if (
+    newText !== lastStatusBarText ||
+    (typeof newTooltip === "string" ? newTooltip : newTooltip.value) !==
+      (typeof lastStatusBarTooltip === "string"
+        ? lastStatusBarTooltip
+        : (lastStatusBarTooltip as vscode.MarkdownString)?.value)
+  ) {
+    aliceStatusBarItem.text = newText;
+    aliceStatusBarItem.tooltip = newTooltip;
+    lastStatusBarText = newText;
+    lastStatusBarTooltip = newTooltip;
   }
 }
 

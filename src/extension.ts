@@ -51,6 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableConfigListener);
 
   updateStatusBar(); // 初始化状态栏
+  aliceStatusBarItem.show(); // 显示状态栏项
 }
 
 // 插件停用时调用的函数

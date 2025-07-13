@@ -32,6 +32,7 @@ export async function showAddApiTokenMenu() {
     // 调用 updateConfig 函数，该函数将负责更新状态并触发状态栏更新
     updateConfig();
   }
+  vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
 }
 
 /**
@@ -68,7 +69,7 @@ export async function showCreateInstanceMenu() {
       detail: "创建新的实例",
     },
     {
-      label: `$(plus) 以默认配置创建`,
+      label: `$(star) 以默认配置创建`,
       detail: default_detail,
     },
     {
@@ -87,7 +88,7 @@ export async function showCreateInstanceMenu() {
   if (selectedItem) {
     switch (selectedItem.label) {
       case `$(refresh) 刷新配置`: {
-        updateConfig(); // 刷新配置
+        await updateConfig(); // 刷新配置
         break;
       }
       case `$(plus) 创建实例`: {
@@ -122,8 +123,8 @@ export async function showCreateInstanceMenu() {
           await vscode.workspace
             .getConfiguration(ALICE_ID)
             .update("plan", plan, true);
-          vscode.window.showInformationMessage("默认配置更新成功");
           updateConfig("defaultPlan"); // 更新默认计划状态
+          vscode.window.showInformationMessage("默认配置更新成功");
         }
         break;
       }
@@ -133,6 +134,7 @@ export async function showCreateInstanceMenu() {
       }
     }
   }
+  vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
 }
 
 /**
@@ -179,9 +181,9 @@ async function createInstance(plan: Plan) {
             }
           }
         );
-        vscode.window.showInformationMessage("实例创建成功");
-        updateConfig("instance"); // 创建成功后更新实例列表
+        await updateConfig("instance"); // 创建成功后更新实例列表
         updateStatusBar(); // 更新状态栏
+        vscode.window.showInformationMessage("实例创建成功");
       })
       .catch((err) => {
         vscode.window.showErrorMessage(`实例创建失败: ${err}`);
@@ -197,12 +199,12 @@ export async function showControlInstanceMenu(instanceList: any[]) {
   const instanceState = CONFIG.instanceState;
   const items: vscode.QuickPickItem[] = [
     {
-      label: `$(preview) 实例状态 | 点击刷新`,
+      label: `$(refresh) 刷新状态`,
       detail: `状态: ${instanceState?.state?.state || "未知"} | cpu: ${
-        instanceState?.state?.cpu || "未知"
-      }% | 可用内存: ${
-        instanceState?.state?.memory?.memavailable || "未知"
-      } | 总流量: ${instanceState?.state?.traffic?.total || "未知"}↑↓ GB`,
+        instanceState?.state?.cpu
+      }% | 可用内存: ${instanceState?.state?.memory?.memavailable} | 总流量: ${
+        instanceState?.state?.traffic?.total
+      }↑↓ GB`,
     },
     {
       label: `$(trash) 删除实例`,
@@ -240,41 +242,38 @@ export async function showControlInstanceMenu(instanceList: any[]) {
     const instanceId = instanceList[0].id.toString();
     const instancePlanId = instanceList[0].plan_id.toString();
     switch (selectedItem.label) {
-      case `$(preview) 实例状态 | 点击刷新`:
+      case `$(refresh) 刷新状态`:
         // 刷新实例状态
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: `实例状态已刷新`,
+            title: `实例状态刷新中...`,
             cancellable: false,
           },
-          (progress) => {
-            updateStatusBar();
-            return new Promise((resolve) => {
-              setTimeout(() => {
-                resolve(undefined);
-              }, 2000); // 消息显示 2 秒后自动关闭
-            });
+          async (progress) => {
+            await updateConfig("instance");
+            await updateStatusBar();
           }
         );
         break;
       case `$(trash) 删除实例`:
-        deleteInstanceItems(instanceId);
+        await deleteInstanceItems(instanceId);
         break;
       case `$(clock) 延长时间`:
-        renewalInstanceItems(instanceId);
+        await renewalInstanceItems(instanceId);
         break;
       case `$(sync) 重装系统`:
-        rebulidInstanceItems(instanceId, instancePlanId);
+        await rebulidInstanceItems(instanceId, instancePlanId);
         break;
       case `$(plug) 控制电源`:
-        powerInstanceItems(instanceId);
+        await powerInstanceItems(instanceId);
         break;
       case `$(settings) 打开设置`:
         openSettings();
         break;
     }
   }
+  vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
 }
 
 /**
@@ -299,9 +298,12 @@ export async function renewalInstanceItems(instanceId: string) {
   if (time) {
     aliceApi
       .renewalInstance(instanceId, time)
-      .then(() => {
-        vscode.window.showInformationMessage("实例延长时间成功");
-        updateConfig("instance"); // 延长时间成功后更新实例列表
+      .then(async (response) => {
+        if (response.data?.status === 200) {
+          await updateConfig("instance");
+          updateStatusBar(); // 更新状态栏
+          vscode.window.showInformationMessage("实例延长时间成功");
+        }
       })
       .catch((err) => {
         vscode.window.showErrorMessage(`实例延长时间失败: ${err}`);
@@ -322,9 +324,12 @@ async function deleteInstanceItems(instanceId: string) {
   if (confirm === "删除") {
     aliceApi
       .deleteInstance(instanceId)
-      .then(() => {
-        vscode.window.showInformationMessage("实例删除成功");
-        updateConfig("instance"); // 删除成功后更新实例列表
+      .then(async (response) => {
+        if (response.data?.status === 200) {
+          await updateConfig("instance");
+          updateStatusBar(); // 更新状态栏
+          vscode.window.showInformationMessage("实例删除成功");
+        }
       })
       .catch((err) => {
         vscode.window.showErrorMessage(`实例删除失败: ${err}`);
@@ -372,7 +377,7 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
             }
           );
           vscode.window.showInformationMessage("实例重装成功");
-          updateConfig("instance"); // 重装成功后更新实例列表
+          await updateConfig("instance"); // 重装成功后更新实例列表
           updateStatusBar(); // 更新状态栏
         }
       })
@@ -401,6 +406,7 @@ export async function powerInstanceItems(instanceId: string) {
 
   if (selectedPower) {
     let action: "boot" | "shutdown" | "restart" | "poweroff" = "shutdown";
+    let state: "running" | "stopped" = "stopped";
     switch (selectedPower.label) {
       case "启动":
         action = "boot";
@@ -418,9 +424,40 @@ export async function powerInstanceItems(instanceId: string) {
 
     aliceApi
       .powerInstance(instanceId, action)
-      .then(() => {
+      .then(async (response) => {
+        if (response.data?.status === 200) {
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `正在执行 ${selectedPower.label} 操作...`,
+              cancellable: false,
+            },
+            async (progress) => {
+              let instanceState = await aliceService.getInstanceState(
+                instanceId
+              );
+              let attempts = 0;
+              const maxAttempts = 60; // 假设最多尝试60次，每次间隔2秒，总共2分钟
+              const delay = (ms: number) =>
+                new Promise((res) => setTimeout(res, ms));
+
+              if (action === "boot" || action === "restart") {
+                state = "running";
+              }
+
+              while (
+                instanceState?.state?.state !== state &&
+                attempts < maxAttempts
+              ) {
+                await delay(2000); // 等待2秒
+                instanceState = await aliceService.getInstanceState(instanceId);
+                attempts++;
+              }
+            }
+          );
+        }
         vscode.window.showInformationMessage(`实例${selectedPower.label}成功`);
-        updateConfig("instance"); // 电源操作成功后更新实例列表
+        updateStatusBar(); // 更新状态栏
       })
       .catch((err) => {
         vscode.window.showErrorMessage(
