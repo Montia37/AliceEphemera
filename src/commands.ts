@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 import { aliceStatusBarItem } from "./extension";
-import { ALICE_ID, CONFIG, Plan, updateStateConfig } from "./alice/config";
+import {
+  ALICE_ID,
+  ALICE_SETTINGS,
+  CONFIG,
+  Plan,
+  updateStateConfig,
+} from "./alice/config";
 import {
   showAddApiTokenMenu,
   showControlInstanceMenu,
@@ -63,7 +69,10 @@ export async function showMenu() {
  * 打开 Alice Ephemera 相关设置
  */
 export async function openSettings() {
-  vscode.commands.executeCommand("workbench.action.openSettings", ALICE_ID);
+  vscode.commands.executeCommand(
+    "workbench.action.openSettings",
+    ALICE_SETTINGS
+  );
 }
 
 /**

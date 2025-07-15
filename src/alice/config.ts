@@ -5,6 +5,8 @@ import { workspace } from "vscode";
  */
 export const ALICE_ID = "aliceephemera";
 
+export const ALICE_SETTINGS = `@ext:montia37.${ALICE_ID}`;
+
 /**
  * 显示 Alice 菜单的命令 ID
  */
@@ -60,9 +62,18 @@ const API_TOKEN = workspace
 
 const DEFAULT_PLAN = workspace.getConfiguration(ALICE_ID).get("plan") as Plan;
 
+const AUTO_CONNECT_INSTANCE = workspace
+  .getConfiguration(ALICE_ID)
+  .get("autoConnectInstance") as string;
+const AUTO_CONNECT_INSTANCE_HOST = workspace
+  .getConfiguration(ALICE_ID)
+  .get("autoConnectInstanceHost") as string;
+
 export const CONFIG = {
   init: true,
   apiToken: API_TOKEN,
+  autoConnectInstance: AUTO_CONNECT_INSTANCE,
+  autoConnectInstanceHost: AUTO_CONNECT_INSTANCE_HOST,
   defaultPlan: DEFAULT_PLAN,
   evoPermissions: {} as any,
   instanceList: [] as any[],

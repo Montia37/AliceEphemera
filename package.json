@@ -63,6 +63,25 @@
               "description": "SSH Key ID（可选）"
             }
           }
+        },
+        "aliceephemera.autoConnectInstance": {
+          "type": "string",
+          "enum": [
+            "false",
+            "true",
+            "new"
+          ],
+          "enumItemLabels": [
+            "不自动连接实例",
+            "在当前窗口连接到实例",
+            "在新窗口连接到实例"
+          ],
+          "default": "false",
+          "markdownDescription": "创建实例后是否自动连接实例，调用 Remote-SSH 实现\n\n如需启用请自行配置 ssh config，内容参考如下\n\n```text\nHost <Host 别名>\n    HostName <推荐使用 hostname 域名>\n    User root\n    StrictHostKeyChecking no\n    UserKnownHostsFile NUL\n    IdentityFile ~/.ssh/<你的私钥>\n```"
+        },
+        "aliceephemera.autoConnectInstanceHost": {
+          "type": "string",
+          "description": "在 Remote-SSH 中配置密钥连接使用的 Host 别名，启用自动连接后会使用此 Host 别名连接到实例"
         }
       }
     }

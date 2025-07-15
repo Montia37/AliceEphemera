@@ -98,7 +98,7 @@ export async function showCreateInstanceMenu() {
         }
         break;
       }
-      case `$(plus) 以默认配置创建`: {
+      case `$(star) 以默认配置创建`: {
         if (default_plan_config) {
           createInstance(CONFIG.defaultPlan);
         } else {
@@ -162,14 +162,15 @@ async function createInstance(plan: Plan) {
             cancellable: false,
           },
           async (progress) => {
-            // 轮询实例状态，直到状态为 'running'
-            let instanceState = await aliceService.getInstanceState(
-              instance.id
-            );
             let attempts = 0;
             const maxAttempts = 60; // 假设最多尝试60次，每次间隔2秒，总共2分钟
             const delay = (ms: number) =>
               new Promise((res) => setTimeout(res, ms));
+            await delay(2000); // 等待2秒
+            // 轮询实例状态，直到状态为 'running'
+            let instanceState = await aliceService.getInstanceState(
+              instance.id
+            );
 
             while (
               instanceState?.state?.state !== "running" &&
@@ -179,15 +180,44 @@ async function createInstance(plan: Plan) {
               instanceState = await aliceService.getInstanceState(instance.id);
               attempts++;
             }
+
+            await delay(2000); // 等待2秒
           }
         );
         await updateConfig("instance"); // 创建成功后更新实例列表
         updateStatusBar(); // 更新状态栏
-        vscode.window.showInformationMessage("实例创建成功");
+        if (CONFIG.autoConnectInstance !== "false") {
+          autoConnectInstance(); // 自动连接实例
+        } else {
+          vscode.window.showInformationMessage("实例创建成功");
+        }
       })
       .catch((err) => {
         vscode.window.showErrorMessage(`实例创建失败: ${err}`);
       });
+  }
+}
+
+async function autoConnectInstance() {
+  const autoConnect = CONFIG.autoConnectInstance;
+  const instance = CONFIG.instanceList[0];
+
+  if (autoConnect !== "false" && instance) {
+    let commands = "opensshremotes.openEmptyWindowInCurrentWindow";
+    if (autoConnect === "new") {
+      commands = "opensshremotes.openEmptyWindow";
+    }
+    const autoConnectHost = CONFIG.autoConnectInstanceHost.trim() || "";
+
+    if (autoConnectHost) {
+      vscode.commands.executeCommand(commands, {
+        host: autoConnectHost,
+      });
+    } else {
+      vscode.window.showErrorMessage(
+        `未配置 ssh config，请自行配置后填写设置中的 Host 别名`
+      );
+    }
   }
 }
 
@@ -197,6 +227,7 @@ async function createInstance(plan: Plan) {
  */
 export async function showControlInstanceMenu(instanceList: any[]) {
   const instanceState = CONFIG.instanceState;
+  const autoConnectHost = CONFIG.autoConnectInstanceHost.trim() || "";
   const items: vscode.QuickPickItem[] = [
     {
       label: `$(refresh) 刷新状态`,
@@ -228,6 +259,13 @@ export async function showControlInstanceMenu(instanceList: any[]) {
     },
   ];
 
+  if (autoConnectHost) {
+    items.splice(1, 0, {
+      label: `$(remote) 远程连接`,
+      detail: `远程连接到当前实例 (${autoConnectHost})`,
+    });
+  }
+
   const selectedItem = await vscode.window.showQuickPick(items, {
     title: "控制实例",
     placeHolder: "请选择要执行的操作",
@@ -255,6 +293,10 @@ export async function showControlInstanceMenu(instanceList: any[]) {
             await updateStatusBar();
           }
         );
+        break;
+      case `$(remote) 远程连接`:
+        // 远程连接到当前实例
+        autoConnectInstance();
         break;
       case `$(trash) 删除实例`:
         await deleteInstanceItems(instanceId);
@@ -357,14 +399,15 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
               cancellable: false,
             },
             async (progress) => {
-              // 轮询实例状态，直到状态为 'running'
-              let instanceState = await aliceService.getInstanceState(
-                instanceId
-              );
               let attempts = 0;
               const maxAttempts = 60; // 假设最多尝试60次，每次间隔2秒，总共2分钟
               const delay = (ms: number) =>
                 new Promise((res) => setTimeout(res, ms));
+              await delay(2000); // 等待2秒
+              // 轮询实例状态，直到状态为 'running'
+              let instanceState = await aliceService.getInstanceState(
+                instanceId
+              );
 
               while (
                 instanceState?.state?.state !== "running" &&
@@ -374,11 +417,17 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
                 instanceState = await aliceService.getInstanceState(instanceId);
                 attempts++;
               }
+
+              await delay(2000); // 等待2秒
             }
           );
-          vscode.window.showInformationMessage("实例重装成功");
           await updateConfig("instance"); // 重装成功后更新实例列表
           updateStatusBar(); // 更新状态栏
+          if (CONFIG.autoConnectInstance !== "false") {
+            autoConnectInstance(); // 自动连接实例
+          } else {
+            vscode.window.showInformationMessage("实例重装成功");
+          }
         }
       })
       .catch((err) => {

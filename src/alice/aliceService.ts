@@ -264,7 +264,9 @@ export class AliceService {
       if (response.status === 200 && response.data?.data) {
         const instanceInfo = response.data.data as InstanceState;
         if (instanceInfo.status === "complete") {
-          const { memory, traffic } = instanceInfo.state;
+          const state = instanceInfo.state;
+          const memory = state.memory;
+          const traffic = state.traffic;
 
           const formatMemory = (mem: string) =>
             (parseInt(mem, 10) / (1024 * 1024)).toFixed(2);
@@ -279,6 +281,10 @@ export class AliceService {
           traffic.in = bytesToGB(traffic.in);
           traffic.out = bytesToGB(traffic.out);
           traffic.total = bytesToGB(traffic.total);
+
+          if (memory.memavailable === "0.00") {
+            state.state = "stopped";
+          }
         }
 
         return instanceInfo;

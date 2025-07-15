@@ -46,6 +46,20 @@ export function activate(context: vscode.ExtensionContext) {
             .get("plan") as Plan,
         });
       }
+      if (event.affectsConfiguration(`${ALICE_ID}.autoConnectInstance`)) {
+        updateStateConfig({
+          autoConnectInstance: vscode.workspace
+            .getConfiguration(ALICE_ID)
+            .get("autoConnectInstance") as string,
+        });
+      }
+      if (event.affectsConfiguration(`${ALICE_ID}.autoConnectInstanceHost`)) {
+        updateStateConfig({
+          autoConnectInstanceHost: vscode.workspace
+            .getConfiguration(ALICE_ID)
+            .get("autoConnectInstanceHost") as string,
+        });
+      }
     }
   );
   context.subscriptions.push(disposableConfigListener);
