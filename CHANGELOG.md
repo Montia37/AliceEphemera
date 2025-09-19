@@ -2,12 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.1.1](https://github.com/Montia37/AliceEphemera/compare/v1.1.0...v1.1.1) (2025-09-19)
+
+
+### 📝 Documentation | 文档变更
+
+* 更新使用方法，添加自动连接与 Remote - SSH 配置说明 ([dbde32b](https://github.com/Montia37/AliceEphemera/commit/dbde32b3d228b4c1cea6629890411cc8051d7a2d))
+
 ## [1.1.0](https://github.com/Montia37/AliceEphemera/compare/v1.0.2...v1.1.0) (2025-07-15)
 
 
 ### ✨ Features | 新功能
 
 * 添加自动连接实例配置，优化实例创建和重装流程 ([a3b033d](https://github.com/Montia37/AliceEphemera/commit/a3b033d5413e0697e75730aad6ae91fea22927da))
+
+
+### 🔧 chore | 其他不修改 src 或测试文件的变更
+
+* **release:** 1.1.0 ([2055dd5](https://github.com/Montia37/AliceEphemera/commit/2055dd583040ecc1e5916265b0100f35c1ee2692))
 
 ## [1.0.2](https://github.com/Montia37/AliceEphemera/compare/v1.0.1...v1.0.2) (2025-07-13)
 
