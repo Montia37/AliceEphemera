@@ -22,7 +22,7 @@
     "url": "https://github.com/Montia37/AliceEphemera.git"
   },
   "license": "MIT",
-  "icon": "resources/alice.png",
+  "icon": "resources/alice-new.jpg",
   "activationEvents": [
     "onStartupFinished"
   ],

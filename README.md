@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="128" src="./resources/alice.png">
+<img width="128" src="./resources/alice-new.jpg">
 
 ## ✨ Alice Ephemera ✨
 
