@@ -8,7 +8,7 @@ import {
   updateStateConfig,
 } from "./alice/config";
 import {
-  showAddApiTokenMenu,
+  showAddAuthKeyMenu,
   showControlInstanceMenu,
   showCreateInstanceMenu,
   renewalInstanceItems,
@@ -19,8 +19,10 @@ let lastStatusBarText: string | undefined;
 let lastStatusBarTooltip: vscode.MarkdownString | string | undefined;
 
 export const aliceService = new AliceService({
-  getApiToken: () =>
-    vscode.workspace.getConfiguration(ALICE_ID).get<string>("apiToken"),
+  getClientId: () =>
+    vscode.workspace.getConfiguration(ALICE_ID).get<string>("clientId"),
+  getSecret: () =>
+    vscode.workspace.getConfiguration(ALICE_ID).get<string>("secret"),
   getDefaultPlan: () =>
     vscode.workspace.getConfiguration(ALICE_ID).get("plan") as Plan,
   showErrorMessage: (message, ...items) =>
@@ -54,8 +56,8 @@ export async function showMenu() {
     setInterval(updateStatusBar, 60000); // 每分钟更新一次
     return; // 初始化完成后直接返回，不再执行后续代码
   }
-  if (!CONFIG.apiToken) {
-    showAddApiTokenMenu();
+  if (!CONFIG.clientId || !CONFIG.secret) {
+    showAddAuthKeyMenu();
   } else if (CONFIG.instanceList && CONFIG.instanceList.length > 0) {
     // 显示控制实例的 Quick Pick 菜单
     showControlInstanceMenu(CONFIG.instanceList);
@@ -98,12 +100,12 @@ export async function updateStatusBar() {
   let newText: string;
   let newTooltip: vscode.MarkdownString | string;
 
-  if (!CONFIG.apiToken) {
+  if (!CONFIG.clientId || !CONFIG.secret) {
     // 更新状态栏文本和 Tooltip
-    newText = `$(server) Alice:未配置ApiToken`;
+    newText = `$(server) Alice:未配置 Token`;
     newTooltip = new vscode.MarkdownString(`
-请在 [https://app.alice.ws/ephemera/console](https://app.alice.ws/ephemera/console) 获取ApiToken\n
-点击设置 ApiToken`);
+请在 [https://app.alice.ws/api-secrets](https://app.alice.ws/api-secrets) 获取新的 Client ID 与 Secret\n
+点击设置 Token`);
   } else if (CONFIG.instanceList && CONFIG.instanceList.length > 0) {
     // 获取第一个实例的信息
     const instance = CONFIG.instanceList[0];

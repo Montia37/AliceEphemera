@@ -14,20 +14,35 @@ import {
 import { convertUTC1ToLocalTime } from "../utils/time";
 
 /**
- * 显示 API Token 输入框
+ * 显示身份验证密钥输入框
  */
-export async function showAddApiTokenMenu() {
-  const apiToken = await vscode.window.showInputBox({
-    title: "请输入 API Token",
-    placeHolder: "API Token",
-    prompt: "在 https://app.alice.ws/ephemera/console 中获取",
+export async function showAddAuthKeyMenu() {
+  const clientId = await vscode.window.showInputBox({
+    title: "请输入 Client ID",
+    placeHolder: "Client ID",
+    prompt: "在 https://app.alice.ws/api-secrets 中获取",
     ignoreFocusOut: true,
   });
-  if (apiToken) {
+
+  if (!clientId) {
+    return;
+  }
+
+  const secret = await vscode.window.showInputBox({
+    title: "请输入 Secret",
+    placeHolder: "Secret",
+    prompt: "在 https://app.alice.ws/api-secrets 中获取",
+    ignoreFocusOut: true,
+  });
+
+  if (clientId && secret) {
     await vscode.workspace
       .getConfiguration(ALICE_ID)
-      .update("apiToken", apiToken, true);
-    vscode.window.showInformationMessage("API Token 设置成功");
+      .update("clientId", clientId, true);
+    await vscode.workspace
+      .getConfiguration(ALICE_ID)
+      .update("secret", secret, true);
+    vscode.window.showInformationMessage("Client ID/Secret 设置成功");
     // 重新加载配置
     // 调用 updateConfig 函数，该函数将负责更新状态并触发状态栏更新
     updateConfig();
@@ -78,7 +93,7 @@ export async function showCreateInstanceMenu() {
     },
     {
       label: `$(settings) 打开设置`,
-      detail: "配置 apiToken 和实例默认配置",
+      detail: "配置 Client ID/Secret 和实例默认配置",
     },
   ];
   const selectedItem = await vscode.window.showQuickPick(createItems, {
@@ -255,7 +270,7 @@ export async function showControlInstanceMenu(instanceList: any[]) {
     },
     {
       label: `$(settings) 打开设置`,
-      detail: "配置 apiToken 和实例默认配置",
+      detail: "配置 Client ID/Secret 和实例默认配置",
     },
   ];
 

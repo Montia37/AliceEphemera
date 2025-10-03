@@ -56,9 +56,10 @@ export interface RebuildInfo {
   sshKey: string;
 }
 
-const API_TOKEN = workspace
+const CLIENT_ID = workspace
   .getConfiguration(ALICE_ID)
-  .get("apiToken") as string;
+  .get("clientId") as string;
+const SECRET = workspace.getConfiguration(ALICE_ID).get("secret") as string;
 
 const DEFAULT_PLAN = workspace.getConfiguration(ALICE_ID).get("plan") as Plan;
 
@@ -71,7 +72,8 @@ const AUTO_CONNECT_INSTANCE_HOST = workspace
 
 export const CONFIG = {
   init: true,
-  apiToken: API_TOKEN,
+  clientId: CLIENT_ID,
+  secret: SECRET,
   autoConnectInstance: AUTO_CONNECT_INSTANCE,
   autoConnectInstanceHost: AUTO_CONNECT_INSTANCE_HOST,
   defaultPlan: DEFAULT_PLAN,

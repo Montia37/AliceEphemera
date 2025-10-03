@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 const API_URL = "https://app.alice.ws/cli/v1";
 
-let currentApiToken: string | undefined;
+let bearerToken: string | undefined;
 
 const service: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -11,13 +11,13 @@ const service: AxiosInstance = axios.create({
   },
 });
 
-// 添加请求拦截器，动态注入最新的 API Token
+// 添加请求拦截器，动态注入最新的 Bearer Token
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (currentApiToken) {
-      config.headers["KP-APIToken"] = currentApiToken;
+    if (bearerToken) {
+      config.headers["Authorization"] = `Bearer ${bearerToken}`;
     } else {
-      delete config.headers["KP-APIToken"];
+      delete config.headers["Authorization"];
       console.warn("Alice Ephemera API Key is not configured.");
     }
     return config;
@@ -28,18 +28,19 @@ service.interceptors.request.use(
 );
 
 /**
- * 设置 API Token
- * @param token API Token
+ * 设置 Bearer Token
+ * @param clientId
+ * @param secret
  */
-export function setApiToken(token: string | undefined) {
-  currentApiToken = token;
+export function setBearerToken(clientId: string, secret: string) {
+  bearerToken = `${clientId}:${secret}`;
 }
 
 /**
- * 清除 API Token
+ * 清除 Bearer Token
  */
-export function clearApiToken() {
-  currentApiToken = undefined;
+export function clearBearerToken() {
+  bearerToken = undefined;
 }
 
 /**
@@ -86,7 +87,7 @@ export const aliceApi = {
    */
   getPlanToOS(plan_id: string): Promise<any> {
     return service({
-      url: "/Evo/PlanToOS",
+      url: "/Evo/getOSByPlan",
       method: "POST",
       data: {
         plan_id: plan_id,

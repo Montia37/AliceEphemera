@@ -61,7 +61,8 @@
 
 Alice Ephemera 的配置位于 VS Code 的设置中
 
-- `aliceephemera.apiToken`: 在 [https://app.alice.ws/ephemera/console](https://app.alice.ws/ephemera/console) 查看 API Token
+- `aliceephemera.clientId`: 请前往 https://app.alice.ws/api-secrets 获取新的 Client ID
+- `aliceephemera.secret`: 请前往 https://app.alice.ws/api-secrets 获取新的 Secret
 - `aliceephemera.plan`: 推荐使用菜单修改配置
   - `id`: 配置 ID
   - `os`: 系统镜像 ID
@@ -71,7 +72,7 @@ Alice Ephemera 的配置位于 VS Code 的设置中
   - `false`: 不自动连接（默认）
   - `true`: 在当前窗口中打开远程连接
   - `new`: 在新窗口中打开远程连接
-- `aliceephemera.autoConnectInstanceHost`: Remote - SSH 中配置的 Host 别名自动连接或菜单中选择“远程连接”时会使用该别名
+- `aliceephemera.autoConnectInstanceHost`: 在 Remote-SSH 中配置密钥连接使用的 Host 别名，启用自动连接后会使用此 Host 别名连接到实例
 
 ### 📄 许可证
 

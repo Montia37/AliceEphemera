@@ -1,13 +1,19 @@
-import { aliceApi, setApiToken } from "./api";
+import { aliceApi, setBearerToken } from "./api";
 import { CONFIG, updateStateConfig, Plan, InstanceState } from "./config";
 import { convertUTC1ToLocalTime } from "../utils/time";
 import { updateStatusBar } from "../commands";
 
 /**
- * 获取 API Token
- * @returns API Token
+ * 获取 Client ID
+ * @returns Client ID
  */
-export type GetApiTokenFn = () => string | undefined;
+export type GetClientIdFn = () => string | undefined;
+
+/**
+ * 获取 Secret
+ * @returns Secret
+ */
+export type GetSecretFn = () => string | undefined;
 
 /**
  * 获取默认计划
@@ -61,7 +67,8 @@ export type OpenSettingsFn = () => void;
 export type ShowRenewalInstanceMenuFn = (instanceId: string) => void;
 
 interface AliceServiceDependencies {
-  getApiToken: GetApiTokenFn;
+  getClientId: GetClientIdFn;
+  getSecret: GetSecretFn;
   getDefaultPlan: GetDefaultPlanFn;
   showErrorMessage: ShowErrorMessageFn;
   showWarningMessage: ShowWarningMessageFn;
@@ -85,11 +92,14 @@ export class AliceService {
    * @param flag - 更新配置的选项
    */
   public async updateConfig(flag: "all" | "instance" | "defaultPlan" = "all") {
-    const apiToken = this.dependencies.getApiToken();
-    setApiToken(apiToken); // 设置 API Token 到 aliceApi 模块
+    const clientId = this.dependencies.getClientId();
+    const secret = this.dependencies.getSecret();
+    if (clientId && secret) {
+      setBearerToken(clientId, secret); // 设置 Bearer Token 到 aliceApi 模块
+    }
 
-    if (!apiToken) {
-      // API Token 为空时，不进行 API 调用
+    if (!clientId || !secret) {
+      // Client ID 或 Secret 为空时，不进行 API 调用
       return;
     }
 
@@ -115,7 +125,10 @@ export class AliceService {
           } catch (error: any) {
             if (error.response && error.response.status === 401) {
               this.dependencies
-                .showErrorMessage("认证失败：请检查 apiToken", "打开设置")
+                .showErrorMessage(
+                  "认证失败：请检查 Client ID/Secret",
+                  "打开设置"
+                )
                 .then((selection) => {
                   if (selection === "打开设置") {
                     this.dependencies.openSettings();
@@ -167,9 +180,7 @@ export class AliceService {
                 }
                 if (planList) {
                   planList.forEach((plan: any) => {
-                    plan.os = Object.values(plan.os).flatMap(
-                      (group: any) => group.os
-                    );
+                    plan.os = plan.os.flatMap((group: any) => group.os_list);
                   });
                 }
                 updateStateConfig({ planList: planList || [] }); // 更新状态
