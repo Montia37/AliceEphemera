@@ -12,6 +12,7 @@ import {
   aliceService,
 } from "../commands";
 import { convertUTC1ToLocalTime } from "../utils/time";
+import { showRemoteConnectMenu } from "./remoteConnect";
 
 /**
  * 显示身份验证密钥输入框
@@ -70,10 +71,23 @@ export async function showCreateInstanceMenu() {
       default_os?.name || ""
     } | 时间: ${CONFIG.defaultPlan.time || ""}小时 | SSH Key: ${
       default_sshKey?.name || "不使用"
-    }`;
+    } | 脚本: ${CONFIG.defaultPlan.bootScript || "不使用"}`;
   }
 
   // 创建 Quick Pick Item
+  let autoConnectLabel = "";
+  switch (CONFIG.autoConnectInstance) {
+    case "true":
+      autoConnectLabel = "在当前窗口连接到实例";
+      break;
+    case "new":
+      autoConnectLabel = "在新窗口连接到实例";
+      break;
+    case "false":
+    default:
+      autoConnectLabel = "不自动连接实例";
+      break;
+  }
   const createItems: vscode.QuickPickItem[] = [
     {
       label: `$(refresh) 刷新配置`,
@@ -89,7 +103,13 @@ export async function showCreateInstanceMenu() {
     },
     {
       label: `$(edit) 编辑默认配置`,
-      detail: "点击编辑",
+      detail: "点击编辑默认配置",
+    },
+    {
+      label: `$(remote) 远程连接配置`,
+      detail: `${autoConnectLabel} | ${
+        CONFIG.autoConnectInstanceHost || `未配置 Host 别名`
+      }`,
     },
     {
       label: `$(book) 脚本管理`,
@@ -153,6 +173,9 @@ export async function showCreateInstanceMenu() {
     case `$(book) 脚本管理`:
       vscode.commands.executeCommand("aliceephemera.bootScript");
       break;
+    case `$(remote) 远程连接配置`:
+      await showRemoteConnectMenu();
+      break;
     case `$(settings) 打开设置`:
       openSettings();
       break;
@@ -165,8 +188,29 @@ export async function showCreateInstanceMenu() {
  */
 async function createInstance(plan: Plan) {
   if (plan) {
+    let bootScriptContent: string | undefined;
+    if (plan.bootScript) {
+      const scriptPath = vscode.Uri.joinPath(
+        vscode.Uri.file(CONFIG.bootScriptPath),
+        plan.bootScript
+      ).fsPath;
+      try {
+        bootScriptContent = vscode.workspace.fs
+          .readFile(vscode.Uri.file(scriptPath))
+          .toString();
+      } catch (error) {
+        vscode.window.showErrorMessage(`读取启动脚本失败: ${error}`);
+        return;
+      }
+    }
     aliceApi
-      .createInstance(plan.id, plan.os, plan.time, plan.sshKey, plan.bootScript)
+      .createInstance(
+        plan.id,
+        plan.os,
+        plan.time,
+        plan.sshKey,
+        bootScriptContent
+      )
       .then(async (response) => {
         const instance = response.data?.data;
         instance.creation_at = convertUTC1ToLocalTime(
@@ -415,12 +459,27 @@ async function deleteInstanceItems(instanceId: string) {
 export async function rebulidInstanceItems(instanceId: string, planId: string) {
   const { status, rebulidInfo } = await rebulidInstanceMultiStep(planId);
   if (status === "completed" && rebulidInfo) {
+    let bootScriptContent: string | undefined;
+    if (rebulidInfo.bootScript) {
+      const scriptPath = vscode.Uri.joinPath(
+        vscode.Uri.file(CONFIG.bootScriptPath),
+        rebulidInfo.bootScript
+      ).fsPath;
+      try {
+        bootScriptContent = vscode.workspace.fs
+          .readFile(vscode.Uri.file(scriptPath))
+          .toString();
+      } catch (error) {
+        vscode.window.showErrorMessage(`读取启动脚本失败: ${error}`);
+        return;
+      }
+    }
     aliceApi
       .rebulidInstance(
         instanceId,
         rebulidInfo.os,
         rebulidInfo.sshKey,
-        rebulidInfo.bootScript
+        bootScriptContent
       )
       .then(async (response) => {
         if (response.data?.status === 200) {

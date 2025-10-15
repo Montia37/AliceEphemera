@@ -236,15 +236,7 @@ export async function createInstanceMultiStep(
 
         case CreateInstanceStep.SelectBootScript:
           if (selection) {
-            if (selection.description) {
-              const scriptPath = path.join(
-                CONFIG.bootScriptPath,
-                selection.description
-              );
-              plan.bootScript = fs.readFileSync(scriptPath, "utf-8");
-            } else {
-              plan.bootScript = "";
-            }
+            plan.bootScript = selection.label;
             isCompleted = true;
             resolve({ status: "completed", plan: plan });
             quickPick.hide();
@@ -395,15 +387,7 @@ export async function rebulidInstanceMultiStep(
 
         case RebulidInstanceStep.SelectBootScript:
           if (selection) {
-            if (selection.description) {
-              const scriptPath = path.join(
-                CONFIG.bootScriptPath,
-                selection.description
-              );
-              rebulidInfo.bootScript = fs.readFileSync(scriptPath, "utf-8");
-            } else {
-              rebulidInfo.bootScript = "";
-            }
+            rebulidInfo.bootScript = selection.label;
             isCompleted = true;
             resolve({ status: "completed", rebulidInfo: rebulidInfo });
             quickPick.hide();

@@ -70,6 +70,10 @@
             "sshKey": {
               "type": "string",
               "description": "SSH Key ID（可选）"
+            },
+            "bootScript": {
+              "type": "string",
+              "description": "启动脚本文件名（可选）"
             }
           }
         },
@@ -94,7 +98,7 @@
         },
         "aliceephemera.bootScriptPath": {
           "type": "string",
-          "description": "启动脚本存放目录"
+          "description": "启动脚本文件存放目录"
         }
       }
     }

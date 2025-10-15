@@ -25,8 +25,13 @@
 
 #### 🔌 自动连接与 Remote - SSH 配置（可选但推荐）
 
+> [!NOTE]
+>
+> 官方提供 {username}.evo.host.aliceinit.dev 子域名用于连接实例，会自动解析新创建实例的 ipv4 和 ipv6
+
 1.  安装 [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) 扩展，并按照其指引启用 `Remote - SSH` 功能
-2.  在本机的 `~/.ssh/config`（Windows 可在用户主目录下新建 `\.ssh\config`）中为 Alice 实例添加 Host 别名，例如：
+2.  通过 `远程连接配置` 菜单来管理以下设置
+3.  在本机的 `~/.ssh/config`（Windows 可在用户主目录下新建 `\.ssh\config`）中为 Alice 实例添加 Host 别名，例如：
 
     ```text
     Host alice-ephemera
@@ -44,19 +49,23 @@
     - `UserKnownHostsFile`（必需）: 指定已知主机文件为 `NUL`，用于在 Windows 上绕过写入 `known_hosts` 的需求
     - `IdentityFile`: 指向可访问实例的私钥路径，请根据实际情况替换，一般是由 https://console.alice.ws/account/ssh-keys 创建并下载或自行本地创建再上传
 
-3.  在 VS Code 设置中将 `aliceephemera.autoConnectInstance` 调整为 `true` 或 `new`，并将 `aliceephemera.autoConnectInstanceHost` 填写为上一步配置的 Host 别名（例如 `alice-ephemera`）
+4.  在 VS Code 设置中将 `aliceephemera.autoConnectInstance` 调整为 `true` 或 `new`，并将 `aliceephemera.autoConnectInstanceHost` 填写为上一步配置的 Host 别名（例如 `alice-ephemera`）
 
-完成以上步骤后，插件在创建实例或从控制菜单中选择“远程连接”时，会自动调用 Remote - SSH 命令连接到实例
+ 完成以上步骤后，插件在创建实例或从控制菜单中选择“远程连接”时，会自动调用 Remote - SSH 命令连接到实例
 
 #### 📋 基本流程
 
-1.  打开 VS Code
-2.  点击状态栏配置 API Token
-    <img width="660" src="./resources/setApiToken.png">
-3.  配置完 API Token 后即可点击状态栏创建实例，可以设置默认配置方便创建
-    <img width="660" src="./resources/createInstance.png">
-4.  创建完实例默认会在状态栏显示到期倒计时，鼠标悬浮显示具体配置信息，点击即可控制实例
-    <img width="660" src="./resources/controlInstance.png">
+1. 打开 VS Code
+2. 点击状态栏配置 API Token
+   <img width="660" src="./resources/setApiToken.png">
+3. 配置完 API Token 后即可点击状态栏创建实例，可以设置默认配置方便创建
+   <img width="660" src="./resources/createInstance.png">
+4. 现在你可以通过 `远程连接配置` 菜单来管理自动连接实例的设置
+   <img width="660" src="./resources/remoteConnect.png">
+5. 可以通过 `脚本管理` 菜单来管理创建/重装或者其他地方调用的 bash 脚本
+   <img width="660" src="./resources/bootScript.png">
+6. 创建完实例默认会在状态栏显示到期倒计时，鼠标悬浮显示具体配置信息，点击即可控制实例
+   <img width="660" src="./resources/controlInstance.png">
 
 #### 📜 脚本管理
 
