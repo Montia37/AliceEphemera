@@ -6,6 +6,7 @@ import {
   Plan,
   updateStateConfig,
 } from "./alice/config";
+import { bootScript } from "./script/bootScript";
 
 export let aliceStatusBarItem: vscode.StatusBarItem;
 
@@ -26,6 +27,12 @@ export function activate(context: vscode.ExtensionContext) {
     showMenu
   );
   context.subscriptions.push(showMenuCommand);
+
+  const bootScriptCommand = vscode.commands.registerCommand(
+    "aliceephemera.bootScript",
+    bootScript
+  );
+  context.subscriptions.push(bootScriptCommand);
 
   // --- 3. 检测设置更改 ---
   let disposableConfigListener = vscode.workspace.onDidChangeConfiguration(
@@ -64,6 +71,13 @@ export function activate(context: vscode.ExtensionContext) {
           autoConnectInstanceHost: vscode.workspace
             .getConfiguration(ALICE_ID)
             .get("autoConnectInstanceHost") as string,
+        });
+      }
+      if (event.affectsConfiguration(`${ALICE_ID}.bootScriptPath`)) {
+        updateStateConfig({
+          bootScriptPath: vscode.workspace
+            .getConfiguration(ALICE_ID)
+            .get("bootScriptPath") as string,
         });
       }
     }

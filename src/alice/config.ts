@@ -24,6 +24,7 @@ export interface Plan {
   os: string;
   time: string;
   sshKey: string;
+  bootScript: string;
 }
 
 export interface InstanceState {
@@ -54,6 +55,7 @@ export interface RebuildInfo {
   planId: string;
   os: string;
   sshKey: string;
+  bootScript: string;
 }
 
 const CLIENT_ID = workspace
@@ -70,12 +72,17 @@ const AUTO_CONNECT_INSTANCE_HOST = workspace
   .getConfiguration(ALICE_ID)
   .get("autoConnectInstanceHost") as string;
 
+const BOOT_SCRIPT_PATH = workspace
+  .getConfiguration(ALICE_ID)
+  .get("bootScriptPath") as string;
+
 export const CONFIG = {
   init: true,
   clientId: CLIENT_ID,
   secret: SECRET,
   autoConnectInstance: AUTO_CONNECT_INSTANCE,
   autoConnectInstanceHost: AUTO_CONNECT_INSTANCE_HOST,
+  bootScriptPath: BOOT_SCRIPT_PATH,
   defaultPlan: DEFAULT_PLAN,
   evoPermissions: {} as any,
   instanceList: [] as any[],

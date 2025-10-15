@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 import { Plan, RebuildInfo, CONFIG } from "../alice/config"; // 引入配置文件
+import { getScriptList } from "../utils/getScriptList";
 
 /**
  * 创建实例的状态机
@@ -9,6 +12,7 @@ enum CreateInstanceStep {
   SelectOS,
   EnterTime,
   SelectSSHKey,
+  SelectBootScript,
   Done,
   Cancelled,
 }
@@ -19,6 +23,7 @@ enum CreateInstanceStep {
 enum RebulidInstanceStep {
   SelectOS,
   SelectSSHKey,
+  SelectBootScript,
   Done,
   Cancelled,
 }
@@ -61,6 +66,7 @@ export async function createInstanceMultiStep(
     os: "",
     time: "",
     sshKey: "",
+    bootScript: "",
   };
 
   let currentStep: CreateInstanceStep = CreateInstanceStep.SelectPlan;
@@ -70,12 +76,12 @@ export async function createInstanceMultiStep(
   return new Promise<CreateInstanceResult>((resolve) => {
     const quickPick = vscode.window.createQuickPick<vscode.QuickPickItem>();
     quickPick.ignoreFocusOut = true; // 防止鼠标点击外部时自动关闭 (重要!)
-    quickPick.totalSteps = 4; // 总共有4个用户交互步骤
+    quickPick.totalSteps = 5; // 总共有5个用户交互步骤
 
     let isCompleted = false; // 标记是否是正常完成而非取消
 
     // --- 核心函数：更新 Quick Pick 的视图 ---
-    const updateView = () => {
+    const updateView = async () => {
       quickPick.step = currentStep + 1; // QuickPick step 从 1 开始
       errorMessage = undefined; // 清除错误，避免下次显示
       quickPick.value = ""; // 清除可能残留的输入值
@@ -137,6 +143,7 @@ export async function createInstanceMultiStep(
           quickPick.title = "第 4 步: 选择 SSH Key (可选)";
           quickPick.placeholder = "请选择要使用的 SSH Key，或选择不使用";
           items.push(backItem); // 添加返回按钮
+          items.push({ label: "不使用 SSH Key", detail: " " }); // 添加不使用选项
           items.push(
             ...CONFIG.sshKeyList.map((key: any) => ({
               label: key.name,
@@ -144,7 +151,20 @@ export async function createInstanceMultiStep(
               detail: `创建于 ${key.created_at}`,
             }))
           );
-          items.push({ label: "不使用 SSH Key", description: "" }); // 添加不使用选项
+          quickPick.items = items;
+          break;
+
+        case CreateInstanceStep.SelectBootScript:
+          quickPick.title = "第 5 步: 选择启动脚本 (可选)";
+          quickPick.placeholder = "请选择要使用的启动脚本，或选择不使用";
+          items.push(backItem); // 添加返回按钮
+          items.push({ label: "不使用启动脚本", detail: " " }); // 添加不使用选项
+          if (CONFIG.bootScriptPath && fs.existsSync(CONFIG.bootScriptPath)) {
+            const scripts: vscode.QuickPickItem[] = await getScriptList(
+              CONFIG.bootScriptPath
+            );
+            items.push(...scripts);
+          }
           quickPick.items = items;
           break;
       }
@@ -209,10 +229,25 @@ export async function createInstanceMultiStep(
           // description 可能为 '' (选择了 "不使用 SSH Key")
           if (selection) {
             plan.sshKey = selection.description ?? ""; // 使用 ?? 处理 undefined
-            // 这是最后一步，标记完成并解决 Promise
+            currentStep = CreateInstanceStep.SelectBootScript;
+            updateView();
+          }
+          break;
+
+        case CreateInstanceStep.SelectBootScript:
+          if (selection) {
+            if (selection.description) {
+              const scriptPath = path.join(
+                CONFIG.bootScriptPath,
+                selection.description
+              );
+              plan.bootScript = fs.readFileSync(scriptPath, "utf-8");
+            } else {
+              plan.bootScript = "";
+            }
             isCompleted = true;
             resolve({ status: "completed", plan: plan });
-            quickPick.hide(); // 关闭 Quick Pick
+            quickPick.hide();
           }
           break;
       }
@@ -244,6 +279,7 @@ export async function rebulidInstanceMultiStep(
     planId: planId,
     os: "",
     sshKey: "",
+    bootScript: "",
   };
   let currentStep: RebulidInstanceStep = RebulidInstanceStep.SelectOS;
   let errorMessage: string | undefined = undefined; // 用于存储验证错误信息
@@ -252,12 +288,12 @@ export async function rebulidInstanceMultiStep(
   return new Promise<RebuildInstanceResult>((resolve) => {
     const quickPick = vscode.window.createQuickPick<vscode.QuickPickItem>();
     quickPick.ignoreFocusOut = true; // 防止鼠标点击外部时自动关闭 (重要!)
-    quickPick.totalSteps = 2; // 总共有2个用户交互步骤
+    quickPick.totalSteps = 3; // 总共有3个用户交互步骤
 
     let isCompleted = false; // 标记是否是正常完成而非取消
 
     // --- 核心函数：更新 Quick Pick 的视图 ---
-    const updateView = () => {
+    const updateView = async () => {
       quickPick.step = currentStep + 1; // QuickPick step 从 1 开始
       errorMessage = undefined; // 清除错误，避免下次显示
       quickPick.value = ""; // 清除可能残留的输入值
@@ -297,6 +333,7 @@ export async function rebulidInstanceMultiStep(
           quickPick.title = "第 2 步: 选择 SSH Key (可选)";
           quickPick.placeholder = "请选择要使用的 SSH Key，或选择不使用";
           items.push(backItem); // 添加返回按钮
+          items.push({ label: "不使用 SSH Key", detail: " " }); // 添加不使用选项
           items.push(
             ...CONFIG.sshKeyList.map((key: any) => ({
               label: key.name,
@@ -304,7 +341,20 @@ export async function rebulidInstanceMultiStep(
               detail: `创建于 ${key.created_at}`,
             }))
           );
-          items.push({ label: "不使用 SSH Key", description: "" }); // 添加不使用选项
+          quickPick.items = items;
+          break;
+
+        case RebulidInstanceStep.SelectBootScript:
+          quickPick.title = "第 3 步: 选择启动脚本 (可选)";
+          quickPick.placeholder = "请选择要使用的启动脚本，或选择不使用";
+          items.push(backItem); // 添加返回按钮
+          items.push({ label: "不使用启动脚本", detail: " " }); // 添加不使用选项
+          if (CONFIG.bootScriptPath && fs.existsSync(CONFIG.bootScriptPath)) {
+            const scripts: vscode.QuickPickItem[] = await getScriptList(
+              CONFIG.bootScriptPath
+            );
+            items.push(...scripts);
+          }
           quickPick.items = items;
           break;
       }
@@ -338,10 +388,25 @@ export async function rebulidInstanceMultiStep(
           // description 可能为 '' (选择了 "不使用 SSH Key")
           if (selection) {
             rebulidInfo.sshKey = selection.description ?? ""; // 使用 ?? 处理 undefined
-            // 这是最后一步，标记完成并解决 Promise
+            currentStep = RebulidInstanceStep.SelectBootScript;
+            updateView();
+          }
+          break;
+
+        case RebulidInstanceStep.SelectBootScript:
+          if (selection) {
+            if (selection.description) {
+              const scriptPath = path.join(
+                CONFIG.bootScriptPath,
+                selection.description
+              );
+              rebulidInfo.bootScript = fs.readFileSync(scriptPath, "utf-8");
+            } else {
+              rebulidInfo.bootScript = "";
+            }
             isCompleted = true;
             resolve({ status: "completed", rebulidInfo: rebulidInfo });
-            quickPick.hide(); // 关闭 Quick Pick
+            quickPick.hide();
           }
           break;
       }

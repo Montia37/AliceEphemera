@@ -2,7 +2,7 @@
   "name": "aliceephemera",
   "displayName": "Alice Ephemera",
   "description": "Alice Ephemera 实例管理工具",
-  "version": "tags:VERSION",
+  "version": "1.2.0",
   "publisher": "Montia37",
   "engines": {
     "vscode": "^1.0.0"
@@ -33,6 +33,11 @@
         "command": "aliceephemera.showAliceMenu",
         "title": "Alice Ephemera",
         "category": "Alice Ephemera"
+      },
+      {
+        "command": "aliceephemera.bootScript",
+        "title": "脚本管理",
+        "category": "Alice Ephemera"
       }
     ],
     "configuration": {
@@ -40,11 +45,11 @@
       "properties": {
         "aliceephemera.clientId": {
           "type": "string",
-          "description": "请前往 https://app.alice.ws/api-secrets 获取新的 Client ID 与 Secret"
+          "description": "请前往 https://console.alice.ws/account/api-keys 获取新的 Client ID 与 Secret"
         },
         "aliceephemera.secret": {
           "type": "string",
-          "description": "请前往 https://app.alice.ws/api-secrets 获取新的 Client ID 与 Secret"
+          "description": "请前往 https://console.alice.ws/account/api-keys 获取新的 Client ID 与 Secret"
         },
         "aliceephemera.plan": {
           "type": "object",
@@ -86,6 +91,10 @@
         "aliceephemera.autoConnectInstanceHost": {
           "type": "string",
           "description": "在 Remote-SSH 中配置密钥连接使用的 Host 别名，启用自动连接后会使用此 Host 别名连接到实例"
+        },
+        "aliceephemera.bootScriptPath": {
+          "type": "string",
+          "description": "启动脚本存放目录"
         }
       }
     }

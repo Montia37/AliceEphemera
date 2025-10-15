@@ -92,6 +92,10 @@ export async function showCreateInstanceMenu() {
       detail: "点击编辑",
     },
     {
+      label: `$(book) 脚本管理`,
+      detail: "管理启动脚本",
+    },
+    {
       label: `$(settings) 打开设置`,
       detail: "配置 Client ID/Secret 和实例默认配置",
     },
@@ -100,56 +104,59 @@ export async function showCreateInstanceMenu() {
     title: "Alice Ephemera",
     placeHolder: "请选择要执行的操作",
   });
-  if (selectedItem) {
-    switch (selectedItem.label) {
-      case `$(refresh) 刷新配置`: {
-        await updateConfig(); // 刷新配置
-        break;
+
+  if (!selectedItem) {
+    return;
+  }
+
+  switch (selectedItem.label) {
+    case `$(refresh) 刷新配置`:
+      await updateConfig(); // 刷新配置
+      break;
+    case `$(plus) 创建实例`: {
+      const { status, plan } = await createInstanceMultiStep();
+      if (status === "completed" && plan) {
+        createInstance(plan);
       }
-      case `$(plus) 创建实例`: {
+      break;
+    }
+    case `$(star) 以默认配置创建`: {
+      if (default_plan_config) {
+        createInstance(CONFIG.defaultPlan);
+      } else {
         const { status, plan } = await createInstanceMultiStep();
-        if (status === "completed" && plan) {
-          createInstance(plan);
-        }
-        break;
-      }
-      case `$(star) 以默认配置创建`: {
-        if (default_plan_config) {
-          createInstance(CONFIG.defaultPlan);
-        } else {
-          const { status, plan } = await createInstanceMultiStep();
-          // 更新默认配置
-          if (status === "completed" && plan) {
-            await vscode.workspace
-              .getConfiguration(ALICE_ID)
-              .update("plan", plan, true);
-            vscode.window.showInformationMessage("默认配置创建成功");
-            updateConfig("defaultPlan"); // 更新默认计划状态
-          }
-        }
-        break;
-      }
-      case `$(edit) 编辑默认配置`: {
-        const { status, plan } = await createInstanceMultiStep(
-          CONFIG.defaultPlan
-        );
         // 更新默认配置
         if (status === "completed" && plan) {
           await vscode.workspace
             .getConfiguration(ALICE_ID)
             .update("plan", plan, true);
+          vscode.window.showInformationMessage("默认配置创建成功");
           updateConfig("defaultPlan"); // 更新默认计划状态
-          vscode.window.showInformationMessage("默认配置更新成功");
         }
-        break;
       }
-      case `$(settings) 打开设置`: {
-        openSettings();
-        break;
-      }
+      break;
     }
+    case `$(edit) 编辑默认配置`: {
+      const { status, plan } = await createInstanceMultiStep(
+        CONFIG.defaultPlan
+      );
+      // 更新默认配置
+      if (status === "completed" && plan) {
+        await vscode.workspace
+          .getConfiguration(ALICE_ID)
+          .update("plan", plan, true);
+        updateConfig("defaultPlan"); // 更新默认计划状态
+        vscode.window.showInformationMessage("默认配置更新成功");
+      }
+      break;
+    }
+    case `$(book) 脚本管理`:
+      vscode.commands.executeCommand("aliceephemera.bootScript");
+      break;
+    case `$(settings) 打开设置`:
+      openSettings();
+      break;
   }
-  vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
 }
 
 /**
@@ -159,7 +166,7 @@ export async function showCreateInstanceMenu() {
 async function createInstance(plan: Plan) {
   if (plan) {
     aliceApi
-      .createInstance(plan.id, plan.os, plan.time, plan.sshKey)
+      .createInstance(plan.id, plan.os, plan.time, plan.sshKey, plan.bootScript)
       .then(async (response) => {
         const instance = response.data?.data;
         instance.creation_at = convertUTC1ToLocalTime(
@@ -269,6 +276,10 @@ export async function showControlInstanceMenu(instanceList: any[]) {
       detail: "控制当前实例的电源 (启动, 关闭, 重启， 断电)",
     },
     {
+      label: `$(book) 脚本管理`,
+      detail: "管理启动脚本",
+    },
+    {
       label: `$(settings) 打开设置`,
       detail: "配置 Client ID/Secret 和实例默认配置",
     },
@@ -325,12 +336,14 @@ export async function showControlInstanceMenu(instanceList: any[]) {
       case `$(plug) 控制电源`:
         await powerInstanceItems(instanceId);
         break;
+      case `$(book) 脚本管理`:
+        vscode.commands.executeCommand("aliceephemera.bootScript");
+        break;
       case `$(settings) 打开设置`:
         openSettings();
         break;
     }
   }
-  vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
 }
 
 /**
@@ -403,7 +416,12 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
   const { status, rebulidInfo } = await rebulidInstanceMultiStep(planId);
   if (status === "completed" && rebulidInfo) {
     aliceApi
-      .rebulidInstance(instanceId, rebulidInfo.os, rebulidInfo.sshKey)
+      .rebulidInstance(
+        instanceId,
+        rebulidInfo.os,
+        rebulidInfo.sshKey,
+        rebulidInfo.bootScript
+      )
       .then(async (response) => {
         if (response.data?.status === 200) {
           // 轮询实例状态，直到状态为 'running'

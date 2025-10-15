@@ -136,17 +136,22 @@ export const aliceApi = {
     product_id: string,
     os_id: string,
     time: string,
-    sshKey_id?: string
+    sshKey_id?: string,
+    bootScript?: string
   ): Promise<any> {
+    const params: any = {
+      product_id: product_id,
+      os_id: os_id,
+      time: time,
+      sshKey: sshKey_id,
+    };
+    if (bootScript) {
+      params.bootScript = Buffer.from(bootScript).toString("base64");
+    }
     return service({
       url: "/Evo/Deploy",
       method: "POST",
-      data: {
-        product_id: product_id,
-        os_id: os_id,
-        time: time,
-        sshKey: sshKey_id,
-      },
+      data: params,
     });
   },
 
@@ -212,16 +217,21 @@ export const aliceApi = {
   rebulidInstance(
     instance_id: string,
     os_id: string,
-    sshKey_id?: string
+    sshKey_id?: string,
+    bootScript?: string
   ): Promise<any> {
+    const params: any = {
+      id: instance_id,
+      os: os_id,
+      sshKey: sshKey_id,
+    };
+    if (bootScript) {
+      params.bootScript = Buffer.from(bootScript).toString("base64");
+    }
     return service({
       url: "/Evo/Rebuild",
       method: "POST",
-      data: {
-        id: instance_id,
-        os: os_id,
-        sshKey: sshKey_id,
-      },
+      data: params,
     });
   },
 };

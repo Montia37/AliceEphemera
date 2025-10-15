@@ -15,6 +15,7 @@
 - 创建、删除、重装 EVO 实例
 - 显示实例基本信息
 - 显示实例到期倒计时，到期前 5 分钟会提醒，可选择续期
+- 支持管理与使用自定义脚本
 
 ### 📦 安装
 
@@ -41,7 +42,7 @@
     - `User`: 登录实例使用的默认用户，一般为 `root`
     - `StrictHostKeyChecking`（必需）: 设置为 `no` 可以跳过首次连接时的指纹确认，避免自动连接失败，因为每次删除创建实例都会重置指纹
     - `UserKnownHostsFile`（必需）: 指定已知主机文件为 `NUL`，用于在 Windows 上绕过写入 `known_hosts` 的需求
-    - `IdentityFile`: 指向可访问实例的私钥路径，请根据实际情况替换，一般是由 https://app.alice.ws/sshkey 创建并下载或自行本地创建再上传
+    - `IdentityFile`: 指向可访问实例的私钥路径，请根据实际情况替换，一般是由 https://console.alice.ws/account/ssh-keys 创建并下载或自行本地创建再上传
 
 3.  在 VS Code 设置中将 `aliceephemera.autoConnectInstance` 调整为 `true` 或 `new`，并将 `aliceephemera.autoConnectInstanceHost` 填写为上一步配置的 Host 别名（例如 `alice-ephemera`）
 
@@ -57,12 +58,32 @@
 4.  创建完实例默认会在状态栏显示到期倒计时，鼠标悬浮显示具体配置信息，点击即可控制实例
     <img width="660" src="./resources/controlInstance.png">
 
+#### 📜 脚本管理
+
+插件支持在实例首次启动时自动执行 `Shell` 脚本，可用于实现环境初始化、自动部署等功能。
+
+1.  在主菜单中选择 `脚本管理`
+2.  首次使用时，会提示选择一个本地文件夹用于存放启动脚本
+3.  之后，您可以在脚本管理菜单中对脚本进行增、删、改、查等操作
+4.  在创建或重装实例的流程中，可以选择一个已有的脚本随实例启动
+
+> [!NOTE]
+>
+> **💡 提示:** 插件会将脚本第二行的 `#` 注释作为脚本功能的描述，显示在选择菜单中，方便识别。
+>
+> ```bash
+> #!/bin/bash
+> # 安装 Docker 环境
+> apt update && apt install -y curl
+> curl -fsSL get.docker.com | bash -s docker
+> ```
+
 ### ⚙️ 配置文件说明
 
 Alice Ephemera 的配置位于 VS Code 的设置中
 
-- `aliceephemera.clientId`: 请前往 https://app.alice.ws/api-secrets 获取新的 Client ID
-- `aliceephemera.secret`: 请前往 https://app.alice.ws/api-secrets 获取新的 Secret
+- `aliceephemera.clientId`: 请前往 https://console.alice.ws/account/api-keys 创建新的 Client ID
+- `aliceephemera.secret`: 请前往 https://console.alice.ws/account/api-keys 创建新的 Secret
 - `aliceephemera.plan`: 推荐使用菜单修改配置
   - `id`: 配置 ID
   - `os`: 系统镜像 ID
@@ -73,6 +94,7 @@ Alice Ephemera 的配置位于 VS Code 的设置中
   - `true`: 在当前窗口中打开远程连接
   - `new`: 在新窗口中打开远程连接
 - `aliceephemera.autoConnectInstanceHost`: 在 Remote-SSH 中配置密钥连接使用的 Host 别名，启用自动连接后会使用此 Host 别名连接到实例
+- `aliceephemera.bootScriptPath`: 用于存放实例启动脚本的本地文件夹路径
 
 ### 📄 许可证
 
