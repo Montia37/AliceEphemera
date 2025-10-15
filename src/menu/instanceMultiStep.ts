@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { Plan, RebuildInfo, CONFIG } from "../alice/config"; // 引入配置文件
-import { getScriptList } from "../utils/getScriptList";
+import { getScriptList } from "../utils/getScript";
 
 /**
  * 创建实例的状态机

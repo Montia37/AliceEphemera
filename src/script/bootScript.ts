@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { ALICE_ID, CONFIG } from "../alice/config";
-import { getScriptList } from "../utils/getScriptList";
+import { getScriptList } from "../utils/getScript";
 
 export async function bootScript() {
   const bootScriptPath = CONFIG.bootScriptPath;

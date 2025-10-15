@@ -13,6 +13,7 @@ import {
 } from "../commands";
 import { convertUTC1ToLocalTime } from "../utils/time";
 import { showRemoteConnectMenu } from "./remoteConnect";
+import { getBootScriptContent } from "../utils/getScript";
 
 /**
  * 显示身份验证密钥输入框
@@ -188,21 +189,8 @@ export async function showCreateInstanceMenu() {
  */
 async function createInstance(plan: Plan) {
   if (plan) {
-    let bootScriptContent: string | undefined;
-    if (plan.bootScript) {
-      const scriptPath = vscode.Uri.joinPath(
-        vscode.Uri.file(CONFIG.bootScriptPath),
-        plan.bootScript
-      ).fsPath;
-      try {
-        bootScriptContent = vscode.workspace.fs
-          .readFile(vscode.Uri.file(scriptPath))
-          .toString();
-      } catch (error) {
-        vscode.window.showErrorMessage(`读取启动脚本失败: ${error}`);
-        return;
-      }
-    }
+    const bootScriptContent = await getBootScriptContent(plan.bootScript);
+
     aliceApi
       .createInstance(
         plan.id,
@@ -459,21 +447,10 @@ async function deleteInstanceItems(instanceId: string) {
 export async function rebulidInstanceItems(instanceId: string, planId: string) {
   const { status, rebulidInfo } = await rebulidInstanceMultiStep(planId);
   if (status === "completed" && rebulidInfo) {
-    let bootScriptContent: string | undefined;
-    if (rebulidInfo.bootScript) {
-      const scriptPath = vscode.Uri.joinPath(
-        vscode.Uri.file(CONFIG.bootScriptPath),
-        rebulidInfo.bootScript
-      ).fsPath;
-      try {
-        bootScriptContent = vscode.workspace.fs
-          .readFile(vscode.Uri.file(scriptPath))
-          .toString();
-      } catch (error) {
-        vscode.window.showErrorMessage(`读取启动脚本失败: ${error}`);
-        return;
-      }
-    }
+    const bootScriptContent = await getBootScriptContent(
+      rebulidInfo.bootScript
+    );
+
     aliceApi
       .rebulidInstance(
         instanceId,

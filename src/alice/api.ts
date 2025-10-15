@@ -146,7 +146,7 @@ export const aliceApi = {
       sshKey: sshKey_id,
     };
     if (bootScript) {
-      params.bootScript = Buffer.from(bootScript).toString("base64");
+      params.bootScript = bootScript;
     }
     return service({
       url: "/Evo/Deploy",
@@ -226,7 +226,7 @@ export const aliceApi = {
       sshKey: sshKey_id,
     };
     if (bootScript) {
-      params.bootScript = Buffer.from(bootScript).toString("base64");
+      params.bootScript = bootScript;
     }
     return service({
       url: "/Evo/Rebuild",

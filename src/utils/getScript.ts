@@ -1,5 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as vscode from "vscode";
+import { CONFIG } from "../alice/config";
 
 export async function getScriptList(bootScriptPath: string) {
   const files = fs.readdirSync(bootScriptPath);
@@ -23,4 +25,32 @@ export async function getScriptList(bootScriptPath: string) {
     };
   });
   return scriptItems;
+}
+
+/**
+ * 获取启动脚本内容
+ * @param scriptName - 脚本文件名
+ * @returns 脚本内容或 undefined
+ */
+export async function getBootScriptContent(
+  scriptName: string
+): Promise<string | undefined> {
+  if (!scriptName) {
+    return undefined;
+  }
+  const scriptPath = vscode.Uri.joinPath(
+    vscode.Uri.file(CONFIG.bootScriptPath),
+    scriptName
+  ).fsPath;
+  try {
+    const fileContent = await vscode.workspace.fs.readFile(
+      vscode.Uri.file(scriptPath)
+    );
+    console.log(fileContent);
+
+    return Buffer.from(fileContent).toString("base64");
+  } catch (error) {
+    vscode.window.showErrorMessage(`读取启动脚本失败: ${error}`);
+    return undefined;
+  }
 }
