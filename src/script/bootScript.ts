@@ -55,6 +55,10 @@ async function showScriptManagementMenu(bootScriptPath: string) {
       label: `$(trash) 删除脚本`,
       detail: "删除一个现有的启动脚本",
     },
+    {
+      label: `$(file-text) 查看日志文件`,
+      detail: "查看脚本执行日志",
+    },
   ];
 
   const selectedItem = await vscode.window.showQuickPick(items, {
@@ -83,6 +87,15 @@ async function showScriptManagementMenu(bootScriptPath: string) {
         break;
       case `$(trash) 删除脚本`:
         await deleteScript(bootScriptPath);
+        break;
+      case `$(file-text) 查看日志文件`:
+        const logFilePath = path.join(bootScriptPath, "boot_script_log.json");
+        if (fs.existsSync(logFilePath)) {
+          const document = await vscode.workspace.openTextDocument(logFilePath);
+          await vscode.window.showTextDocument(document);
+        } else {
+          vscode.window.showInformationMessage("暂无日志文件。");
+        }
         break;
     }
   }

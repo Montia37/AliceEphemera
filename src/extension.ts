@@ -7,6 +7,7 @@ import {
   updateStateConfig,
 } from "./alice/config";
 import { bootScript } from "./script/bootScript";
+import { readLogFile } from "./script/bootScriptLog";
 
 export let aliceStatusBarItem: vscode.StatusBarItem;
 
@@ -33,6 +34,31 @@ export function activate(context: vscode.ExtensionContext) {
     bootScript
   );
   context.subscriptions.push(bootScriptCommand);
+
+  const showScriptResultCommand = vscode.commands.registerCommand(
+    "alice.showScriptResult",
+    async (commandUid: string) => {
+      if (!commandUid) {
+        return;
+      }
+      const logs = await readLogFile();
+      const logEntry = logs.find((log) => log.id === commandUid);
+
+      if (!logEntry || !logEntry.output) {
+        vscode.window.showErrorMessage("未找到该脚本的执行结果。");
+        return;
+      }
+
+      const panel = vscode.window.createWebviewPanel(
+        "scriptResult",
+        `脚本执行结果: ${logEntry.scriptName}`,
+        vscode.ViewColumn.One,
+        {}
+      );
+      panel.webview.html = getWebviewContent(logEntry.output);
+    }
+  );
+  context.subscriptions.push(showScriptResultCommand);
 
   // --- 3. 检测设置更改 ---
   let disposableConfigListener = vscode.workspace.onDidChangeConfiguration(
@@ -90,3 +116,39 @@ export function activate(context: vscode.ExtensionContext) {
 
 // 插件停用时调用的函数
 export function deactivate() {}
+
+function getWebviewContent(content: string): string {
+  // Escape HTML to prevent issues with special characters
+  const escapedContent = content
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, '"')
+    .replace(/'/g, "&#039;");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Script Result</title>
+    <style>
+        body {
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+            font-family: var(--vscode-editor-font-family);
+            font-weight: var(--vscode-editor-font-weight);
+            font-size: var(--vscode-editor-font-size);
+            padding: 1em;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <pre>${escapedContent}</pre>
+</body>
+</html>`;
+}

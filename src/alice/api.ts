@@ -234,4 +234,22 @@ export const aliceApi = {
       data: params,
     });
   },
+  /**
+   * 获取命令执行结果
+   * @param command_uid 命令 ID
+   * @param output_base64 是否使用 base64 编码
+   */
+  getCommandResult(
+    command_uid: string,
+    output_base64: "true" | "false" = "true"
+  ): Promise<any> {
+    return service({
+      url: "/Command/getResult",
+      method: "POST",
+      data: {
+        command_uid: command_uid,
+        output_base64: output_base64,
+      },
+    });
+  },
 };

@@ -14,6 +14,13 @@ import {
 import { convertUTC1ToLocalTime } from "../utils/time";
 import { showRemoteConnectMenu } from "./remoteConnect";
 import { getBootScriptContent } from "../utils/getScript";
+import {
+  addLogEntry,
+  getLogEntriesForInstance,
+  LogEntry,
+  readLogFile,
+  updateLogEntry,
+} from "../script/bootScriptLog";
 
 /**
  * 显示身份验证密钥输入框
@@ -201,6 +208,8 @@ async function createInstance(plan: Plan) {
       )
       .then(async (response) => {
         const instance = response.data?.data;
+        const bootScriptUid = instance.boot_script_uid;
+
         instance.creation_at = convertUTC1ToLocalTime(
           instance.creation_at
         ).toLocaleString();
@@ -208,6 +217,8 @@ async function createInstance(plan: Plan) {
           instance.expiration_at
         ).toLocaleString();
         updateStateConfig({ instanceList: [instance] });
+
+        await addLogEntry(instance.id, "创建", plan.bootScript, bootScriptUid);
 
         await vscode.window.withProgress(
           {
@@ -234,15 +245,31 @@ async function createInstance(plan: Plan) {
               instanceState = await aliceService.getInstanceState(instance.id);
               attempts++;
             }
+            // 实例创建完成
+            progress.report({ message: "实例创建成功" });
+            await delay(1000);
 
-            await delay(2000); // 等待2秒
+            // 如果有启动脚本，则开始轮询脚本结果
+            if (bootScriptUid && plan.bootScript) {
+              progress.report({
+                message: `正在执行启动脚本 ${plan.bootScript}...`,
+              });
+              await pollBootScriptResult(
+                instance.id,
+                bootScriptUid,
+                plan.bootScript
+              );
+            }
           }
         );
-        await updateConfig("instance"); // 创建成功后更新实例列表
+
+        await updateConfig("instance"); // 更新实例列表
         updateStatusBar(); // 更新状态栏
+
         if (CONFIG.autoConnectInstance !== "false") {
           autoConnectInstance(); // 自动连接实例
-        } else {
+        } else if (!bootScriptUid) {
+          // 只有在没有启动脚本时才显示这个简单的成功消息
           vscode.window.showInformationMessage("实例创建成功");
         }
       })
@@ -254,7 +281,7 @@ async function createInstance(plan: Plan) {
 
 async function autoConnectInstance() {
   const autoConnect = CONFIG.autoConnectInstance;
-  const instance = CONFIG.instanceList[0];
+  const instance = CONFIG.instanceList;
 
   if (autoConnect !== "false" && instance) {
     let commands = "opensshremotes.openEmptyWindowInCurrentWindow";
@@ -324,6 +351,16 @@ export async function showControlInstanceMenu(instanceList: any[]) {
     });
   }
 
+  // 检查是否有脚本执行历史
+  const instanceId = instanceList[0].id.toString();
+  const scriptHistory = await getLogEntriesForInstance(instanceId);
+  if (scriptHistory.length > 0) {
+    items.splice(6, 0, {
+      label: `$(history) 查看脚本执行历史`,
+      detail: "查看此实例的启动脚本执行记录",
+    });
+  }
+
   const selectedItem = await vscode.window.showQuickPick(items, {
     title: "控制实例",
     placeHolder: "请选择要执行的操作",
@@ -367,6 +404,9 @@ export async function showControlInstanceMenu(instanceList: any[]) {
         break;
       case `$(plug) 控制电源`:
         await powerInstanceItems(instanceId);
+        break;
+      case `$(history) 查看脚本执行历史`:
+        await showScriptHistoryMenu(instanceId);
         break;
       case `$(book) 脚本管理`:
         vscode.commands.executeCommand("aliceephemera.bootScript");
@@ -460,7 +500,13 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
       )
       .then(async (response) => {
         if (response.data?.status === 200) {
-          // 轮询实例状态，直到状态为 'running'
+          const bootScriptUid = response.data?.data.boot_script_uid;
+          await addLogEntry(
+            instanceId,
+            "重装",
+            rebulidInfo.bootScript,
+            bootScriptUid
+          );
           await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
@@ -473,7 +519,6 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
               const delay = (ms: number) =>
                 new Promise((res) => setTimeout(res, ms));
               await delay(2000); // 等待2秒
-              // 轮询实例状态，直到状态为 'running'
               let instanceState = await aliceService.getInstanceState(
                 instanceId
               );
@@ -486,15 +531,28 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
                 instanceState = await aliceService.getInstanceState(instanceId);
                 attempts++;
               }
+              progress.report({ message: "实例重装成功" });
+              await delay(1000);
 
-              await delay(2000); // 等待2秒
+              if (bootScriptUid && rebulidInfo.bootScript) {
+                progress.report({
+                  message: `正在执行启动脚本 ${rebulidInfo.bootScript}...`,
+                });
+                await pollBootScriptResult(
+                  instanceId,
+                  bootScriptUid,
+                  rebulidInfo.bootScript
+                );
+              }
             }
           );
+
           await updateConfig("instance"); // 重装成功后更新实例列表
           updateStatusBar(); // 更新状态栏
+
           if (CONFIG.autoConnectInstance !== "false") {
             autoConnectInstance(); // 自动连接实例
-          } else {
+          } else if (!bootScriptUid) {
             vscode.window.showInformationMessage("实例重装成功");
           }
         }
@@ -582,5 +640,89 @@ export async function powerInstanceItems(instanceId: string) {
           `实例${selectedPower.label}失败: ${err}`
         );
       });
+  }
+}
+
+/**
+ * 轮询启动脚本的执行结果
+ * @param instanceId 实例 ID
+ * @param commandUid 命令 ID
+ * @param scriptName 脚本名称
+ */
+async function pollBootScriptResult(
+  instanceId: string,
+  commandUid: string,
+  scriptName: string
+) {
+  const maxAttempts = 180; // 最多尝试 180 次，每次 5 秒，总共 15 分钟
+  let attempts = 0;
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+  while (attempts < maxAttempts) {
+    try {
+      const response = await aliceApi.getCommandResult(commandUid);
+      if (response.status === 200 && response.data?.data?.output) {
+        const output = response.data.data.output;
+        await updateLogEntry(commandUid, "completed", output);
+        const selection = await vscode.window.showInformationMessage(
+          `脚本 ${scriptName} 执行成功`,
+          { modal: true },
+          "查看执行结果"
+        );
+        if (selection === "查看执行结果") {
+          vscode.commands.executeCommand("alice.showScriptResult", commandUid);
+        }
+        return; // 成功，退出轮询
+      }
+    } catch (error: any) {
+      // 202 表示还在执行中，忽略
+      if (error.response?.status !== 202) {
+        console.error("Error fetching command result:", error);
+        const errorMessage = `获取结果失败: ${
+          error.response?.data?.message || error.message
+        }`;
+        await updateLogEntry(commandUid, "failed", errorMessage);
+        vscode.window.showErrorMessage(
+          `脚本 ${scriptName} 执行失败: ${errorMessage}`
+        );
+        return;
+      }
+    }
+    attempts++;
+    await delay(5000); // 等待 5 秒
+  }
+
+  // 超时
+  await updateLogEntry(commandUid, "failed", "获取结果超时");
+  vscode.window.showWarningMessage(`脚本 ${scriptName} 执行结果获取超时`);
+}
+
+/**
+ * 显示脚本执行历史菜单
+ * @param instanceId 实例 ID
+ */
+async function showScriptHistoryMenu(instanceId: string) {
+  const history = await getLogEntriesForInstance(instanceId);
+  if (history.length === 0) {
+    vscode.window.showInformationMessage("该实例没有脚本执行历史记录。");
+    return;
+  }
+
+  const items: (vscode.QuickPickItem & { logId: string })[] = history.map(
+    (log) => ({
+      label: log.scriptName,
+      description: `${log.operation} - ${log.status}`,
+      detail: log.dateTime,
+      logId: log.id,
+    })
+  );
+
+  const selected = await vscode.window.showQuickPick(items, {
+    title: "脚本执行历史",
+    placeHolder: "选择一个记录查看详细结果",
+  });
+
+  if (selected) {
+    vscode.commands.executeCommand("alice.showScriptResult", selected.logId);
   }
 }
