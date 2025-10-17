@@ -236,7 +236,9 @@ export async function createInstanceMultiStep(
 
         case CreateInstanceStep.SelectBootScript:
           if (selection) {
-            plan.bootScript = selection.label;
+            // 如果选择“不使用启动脚本”，则 bootScript 为空，否则为脚本文件名
+            plan.bootScript =
+              selection.label === "不使用启动脚本" ? "" : selection.label;
             isCompleted = true;
             resolve({ status: "completed", plan: plan });
             quickPick.hide();
@@ -387,7 +389,9 @@ export async function rebulidInstanceMultiStep(
 
         case RebulidInstanceStep.SelectBootScript:
           if (selection) {
-            rebulidInfo.bootScript = selection.label;
+            // 如果选择“不使用启动脚本”，则 bootScript 为空，否则为脚本文件名
+            rebulidInfo.bootScript =
+              selection.label === "不使用启动脚本" ? "" : selection.label;
             isCompleted = true;
             resolve({ status: "completed", rebulidInfo: rebulidInfo });
             quickPick.hide();
