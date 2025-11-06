@@ -90,6 +90,7 @@ export const CONFIG = {
   sshKeyList: [] as any[],
   instanceState: {} as InstanceState,
   doNotRemindExpiration: false,
+  updateStatusBarInterval: null as any,
 };
 
 /**

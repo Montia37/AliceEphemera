@@ -62,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // --- 3. 检测设置更改 ---
   let disposableConfigListener = vscode.workspace.onDidChangeConfiguration(
-    (event) => {
+    async (event) => {
       if (
         event.affectsConfiguration(`${ALICE_ID}.clientId`) ||
         event.affectsConfiguration(`${ALICE_ID}.secret`)
@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
             .get("secret") as string,
         });
 
-        updateConfig();
+        await updateConfig();
       }
       if (event.affectsConfiguration(`${ALICE_ID}.plan`)) {
         updateStateConfig({

@@ -49,12 +49,9 @@ export const aliceService = new AliceService({
  */
 export async function showMenu() {
   if (CONFIG.init) {
+    updateStateConfig({ init: false });
     await updateConfig(); // 更新所有配置
-    CONFIG.init = false; // 设置为 false，表示初始化完成
-    updateStatusBar(); // 更新状态栏
-    // 定时更新状态栏
-    setInterval(updateStatusBar, 60000); // 每分钟更新一次
-    return; // 初始化完成后直接返回，不再执行后续代码
+    return;
   }
   if (!CONFIG.clientId || !CONFIG.secret) {
     showAddAuthKeyMenu();
@@ -148,7 +145,7 @@ export async function updateStatusBar() {
       instanceState?.state?.traffic?.in
     }↓ GB |
 | **网速:** | ${instance.show_speed} |
-[**官网查看实例详情**](https://app.alice.ws/console/evo?id=${instance.uid}) |`);
+[**前往官网查看实例**](https://console.alice.ws/ephemera/evo-cloud) |`);
     instanceInfo.isTrusted = true;
     // 更新状态栏文本和 Tooltip
     newText = `$(server) Alice: ${hours}h ${minutes}m`;
@@ -181,5 +178,10 @@ export async function updateConfig(
   flag: "all" | "instance" | "defaultPlan" = "all"
 ) {
   await aliceService.updateConfig(flag);
-  updateStatusBar();
+  await updateStatusBar();
+  if (!CONFIG.updateStatusBarInterval) {
+    updateStateConfig({
+      updateStatusBarInterval: setInterval(updateStatusBar, 60000),
+    });
+  }
 }

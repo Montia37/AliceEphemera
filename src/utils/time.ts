@@ -1,8 +1,21 @@
-// 将 UTC+1 时区转换为当地时区
-export function convertUTC1ToLocalTime(utcDateString: string): Date {
-  const utcDate = new Date(utcDateString);
-  const utcOffset = utcDate.getTimezoneOffset(); // 本地时区与 UTC 的差值(分钟)
-  const utc1ToLocalOffset = (utcOffset + 60) * 60 * 1000; // (本地时区与UTC的差值+1小时) 转为毫秒
-  const localTime = new Date(utcDate.getTime() - utc1ToLocalOffset);
-  return localTime;
+// 将任意时区时间转换为本地时间
+export function convertTimezoneToLocal(
+  timeString: string,
+  sourceTimezone: string = "Europe/London"
+): Date {
+  const parsedDate = new Date(timeString);
+  const now = new Date();
+
+  const nowInSourceTZ = new Date(
+    now.toLocaleString("en-US", { timeZone: sourceTimezone })
+  );
+  const nowInLocalTZ = new Date(
+    now.toLocaleString("en-US", {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    })
+  );
+
+  const timezoneOffset = nowInLocalTZ.getTime() - nowInSourceTZ.getTime();
+
+  return new Date(parsedDate.getTime() + timezoneOffset);
 }

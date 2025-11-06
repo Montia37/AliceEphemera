@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 import { aliceApi } from "../alice/api";
-import { Plan, ALICE_ID, CONFIG, updateStateConfig } from "../alice/config";
+import {
+  Plan,
+  ALICE_ID,
+  CONFIG,
+  updateStateConfig,
+  InstanceState,
+} from "../alice/config";
 import {
   createInstanceMultiStep,
   rebulidInstanceMultiStep,
@@ -11,7 +17,7 @@ import {
   updateStatusBar,
   aliceService,
 } from "../commands";
-import { convertUTC1ToLocalTime } from "../utils/time";
+import { convertTimezoneToLocal } from "../utils/time";
 import { showRemoteConnectMenu } from "./remoteConnect";
 import { getBootScriptContent } from "../utils/getScript";
 import {
@@ -54,7 +60,7 @@ export async function showAddAuthKeyMenu() {
     vscode.window.showInformationMessage("Client ID/Secret 设置成功");
     // 重新加载配置
     // 调用 updateConfig 函数，该函数将负责更新状态并触发状态栏更新
-    updateConfig();
+    await updateConfig();
   }
   vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
 }
@@ -159,7 +165,7 @@ export async function showCreateInstanceMenu() {
             .getConfiguration(ALICE_ID)
             .update("plan", plan, true);
           vscode.window.showInformationMessage("默认配置创建成功");
-          updateConfig("defaultPlan"); // 更新默认计划状态
+          await updateConfig("defaultPlan"); // 更新默认计划状态
         }
       }
       break;
@@ -173,7 +179,7 @@ export async function showCreateInstanceMenu() {
         await vscode.workspace
           .getConfiguration(ALICE_ID)
           .update("plan", plan, true);
-        updateConfig("defaultPlan"); // 更新默认计划状态
+        await updateConfig("defaultPlan"); // 更新默认计划状态
         vscode.window.showInformationMessage("默认配置更新成功");
       }
       break;
@@ -210,10 +216,10 @@ async function createInstance(plan: Plan) {
         const instance = response.data?.data;
         const bootScriptUid = instance.boot_script_uid;
 
-        instance.creation_at = convertUTC1ToLocalTime(
+        instance.creation_at = convertTimezoneToLocal(
           instance.creation_at
         ).toLocaleString();
-        instance.expiration_at = convertUTC1ToLocalTime(
+        instance.expiration_at = convertTimezoneToLocal(
           instance.expiration_at
         ).toLocaleString();
         updateStateConfig({ instanceList: [instance] });
@@ -264,7 +270,6 @@ async function createInstance(plan: Plan) {
         );
 
         await updateConfig("instance"); // 更新实例列表
-        updateStatusBar(); // 更新状态栏
 
         if (CONFIG.autoConnectInstance !== "false") {
           autoConnectInstance(); // 自动连接实例
@@ -376,18 +381,7 @@ export async function showControlInstanceMenu(instanceList: any[]) {
     const instancePlanId = instanceList[0].plan_id.toString();
     switch (selectedItem.label) {
       case `$(refresh) 刷新状态`:
-        // 刷新实例状态
-        vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: `实例状态刷新中...`,
-            cancellable: false,
-          },
-          async (progress) => {
-            await updateConfig("instance");
-            await updateStatusBar();
-          }
-        );
+        await updateConfig("instance");
         break;
       case `$(remote) 远程连接`:
         // 远程连接到当前实例
@@ -443,7 +437,6 @@ export async function renewalInstanceItems(instanceId: string) {
       .then(async (response) => {
         if (response.data?.status === 200) {
           await updateConfig("instance");
-          updateStatusBar(); // 更新状态栏
           vscode.window.showInformationMessage("实例延长时间成功");
         }
       })
@@ -469,8 +462,14 @@ async function deleteInstanceItems(instanceId: string) {
       .then(async (response) => {
         if (response.data?.status === 200) {
           await updateConfig("instance");
-          updateStatusBar(); // 更新状态栏
           vscode.window.showInformationMessage("实例删除成功");
+          clearInterval(CONFIG.updateStatusBarInterval); // 停止状态栏更新
+          updateStateConfig({
+            instanceList: [],
+            instanceState: {} as InstanceState,
+            doNotRemindExpiration: false,
+            updateStatusBarInterval: null,
+          }); // 重置
         }
       })
       .catch((err) => {
@@ -548,7 +547,6 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
           );
 
           await updateConfig("instance"); // 重装成功后更新实例列表
-          updateStatusBar(); // 更新状态栏
 
           if (CONFIG.autoConnectInstance !== "false") {
             autoConnectInstance(); // 自动连接实例

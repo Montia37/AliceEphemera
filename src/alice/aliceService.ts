@@ -1,6 +1,6 @@
 import { aliceApi, setBearerToken } from "./api";
 import { CONFIG, updateStateConfig, Plan, InstanceState } from "./config";
-import { convertUTC1ToLocalTime } from "../utils/time";
+import { convertTimezoneToLocal } from "../utils/time";
 import { updateStatusBar } from "../commands";
 
 /**
@@ -113,10 +113,10 @@ export class AliceService {
             const instanceList = response.data?.data;
             if (instanceList && instanceList.length > 0) {
               instanceList.forEach((instance: any) => {
-                instance.creation_at = convertUTC1ToLocalTime(
+                instance.creation_at = convertTimezoneToLocal(
                   instance.creation_at
                 ).toLocaleString();
-                instance.expiration_at = convertUTC1ToLocalTime(
+                instance.expiration_at = convertTimezoneToLocal(
                   instance.expiration_at
                 ).toLocaleString();
               });
@@ -138,9 +138,9 @@ export class AliceService {
             }
             this.dependencies
               .showErrorMessage("获取实例列表失败，请检查网络连接", "重试")
-              .then((selection) => {
+              .then(async (selection) => {
                 if (selection === "重试") {
-                  this.updateConfig(flag);
+                  await this.updateConfig(flag);
                 }
               });
             console.error("Error fetching instance list:", error);
@@ -198,7 +198,7 @@ export class AliceService {
                 const sshKeyList = response.data?.data;
                 if (sshKeyList && sshKeyList.length > 0) {
                   sshKeyList.forEach((sshKey: any) => {
-                    sshKey.created_at = convertUTC1ToLocalTime(
+                    sshKey.created_at = convertTimezoneToLocal(
                       sshKey.created_at
                     ).toLocaleString();
                   });
@@ -223,7 +223,7 @@ export class AliceService {
   /**
    * 检查实例剩余时间并显示警告
    */
-  public checkInstanceExpiration() {
+  public async checkInstanceExpiration() {
     if (CONFIG.instanceList && CONFIG.instanceList.length > 0) {
       const instance = CONFIG.instanceList[0];
       const expiration_at = new Date(instance.expiration_at).getTime();
@@ -256,9 +256,18 @@ export class AliceService {
       }
 
       if (timeLeft <= 0) {
-        this.updateConfig("instance"); // 更新实例列表
-        updateStatusBar();
-        this.dependencies.showErrorMessage(`实例 ${instance.id} 已被删除！`);
+        this.dependencies.showErrorMessage(
+          `实例 ${instance.id} 已到期自动删除！或到期时间错误，请自行确认。`
+        );
+        clearInterval(CONFIG.updateStatusBarInterval); // 停止状态栏更新
+        updateStateConfig({
+          init: true,
+          instanceList: [],
+          instanceState: {} as InstanceState,
+          doNotRemindExpiration: false,
+          updateStatusBarInterval: null,
+        }); // 清空状态
+        updateStatusBar(); // 立即更新状态栏
       }
     }
   }
