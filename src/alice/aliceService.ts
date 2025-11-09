@@ -224,51 +224,53 @@ export class AliceService {
    * 检查实例剩余时间并显示警告
    */
   public async checkInstanceExpiration() {
-    if (CONFIG.instanceList && CONFIG.instanceList.length > 0) {
-      const instance = CONFIG.instanceList[0];
-      const expiration_at = new Date(instance.expiration_at).getTime();
-      const now = new Date().getTime();
-      const timeLeft = expiration_at - now;
+    const instance = CONFIG.instanceList[0];
+    const expiration_at = new Date(instance.expiration_at).getTime();
+    const now = new Date().getTime();
+    const timeLeft = expiration_at - now;
+    const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
 
-      const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+    // 检查是否设置了不再提醒
+    if (CONFIG.doNotRemindExpiration) {
+      return;
+    }
 
-      // 检查是否设置了不再提醒
-      if (CONFIG.doNotRemindExpiration) {
-        return;
+    if (timeLeft < 0) {
+      this.updateConfig("instance");
+      if (CONFIG.instanceList.length > 0) {
+        return; // 如果还有实例，直接返回
       }
-      if (timeLeft < 5 * 60 * 1000 && timeLeft > 0) {
-        this.dependencies
-          .showWarningMessage(
-            `实例 ${instance.id} 剩余时间不足 ${minutes} 分钟，请及时备份数据！\n是否需要延长时间？`,
-            { modal: true },
-            "是",
-            "不再提醒"
-          )
-          .then((selection) => {
-            if (selection === "是") {
-              this.dependencies.showRenewalInstanceMenu(instance.id);
-            } else if (selection === "本次不再提醒") {
-              updateStateConfig({
-                doNotRemindExpiration: true,
-              });
-            }
-          });
-      }
+      this.dependencies.showErrorMessage(
+        `实例 ${instance.id} 已到期自动删除！或到期时间错误，请自行确认。`
+      );
+      clearInterval(CONFIG.updateStatusBarInterval); // 停止状态栏更新
+      updateStateConfig({
+        instanceList: [],
+        instanceState: {} as InstanceState,
+        doNotRemindExpiration: false,
+        updateStatusBarInterval: null,
+      }); // 清空状态
+      updateStatusBar(); // 立即更新状态栏
+      return;
+    }
 
-      if (timeLeft <= 0) {
-        this.dependencies.showErrorMessage(
-          `实例 ${instance.id} 已到期自动删除！或到期时间错误，请自行确认。`
-        );
-        clearInterval(CONFIG.updateStatusBarInterval); // 停止状态栏更新
-        updateStateConfig({
-          init: true,
-          instanceList: [],
-          instanceState: {} as InstanceState,
-          doNotRemindExpiration: false,
-          updateStatusBarInterval: null,
-        }); // 清空状态
-        updateStatusBar(); // 立即更新状态栏
-      }
+    if (timeLeft < 5 * 60 * 1000 && timeLeft >= 0) {
+      this.dependencies
+        .showWarningMessage(
+          `实例 ${instance.id} 剩余时间不足 ${minutes} 分钟，请及时备份数据！\n是否需要延长时间？`,
+          { modal: true },
+          "是",
+          "本次不再提醒"
+        )
+        .then((selection) => {
+          if (selection === "是") {
+            this.dependencies.showRenewalInstanceMenu(instance.id);
+          } else if (selection === "本次不再提醒") {
+            updateStateConfig({
+              doNotRemindExpiration: true,
+            });
+          }
+        });
     }
   }
   /**

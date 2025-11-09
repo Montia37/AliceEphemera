@@ -51,10 +51,22 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | sed -n '2p')
+          echo "Previous tag: $PREVIOUS_TAG"
+          CHANGELOG=$(git log $PREVIOUS_TAG..${{ github.ref_name }} --pretty=format:"* %s (%h)")
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ env.PACKAGE_NAME }}
+          body: |
+            ${{ env.CHANGELOG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
