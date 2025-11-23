@@ -64,7 +64,7 @@ export type OpenSettingsFn = () => void;
  * 显示续订实例菜单
  * @param instanceId 实例 ID
  */
-export type ShowRenewalInstanceMenuFn = (instanceId: string) => void;
+export type ShowRenewalInstanceMenuFn = (instanceId: number) => void;
 
 interface AliceServiceDependencies {
   getClientId: GetClientIdFn;
@@ -115,10 +115,10 @@ export class AliceService {
               instanceList.forEach((instance: any) => {
                 instance.creation_at = convertTimezoneToLocal(
                   instance.creation_at
-                ).toLocaleString();
+                );
                 instance.expiration_at = convertTimezoneToLocal(
                   instance.expiration_at
-                ).toLocaleString();
+                );
               });
             }
             updateStateConfig({ instanceList: instanceList || [] }); // 更新状态
@@ -168,7 +168,7 @@ export class AliceService {
           // 获取计划列表
           await aliceApi
             .getPlanList()
-            .then((response) => {
+            .then(async (response) => {
               if (response.status === 200) {
                 let planList = response.data?.data;
                 if (CONFIG.evoPermissions.allow_packages && planList) {
@@ -178,10 +178,29 @@ export class AliceService {
                     )
                   );
                 }
-                if (planList) {
-                  planList.forEach((plan: any) => {
-                    plan.os = plan.os.flatMap((group: any) => group.os_list);
-                  });
+
+                if (planList && planList.length > 0) {
+                  await Promise.all(
+                    planList.map(async (plan: any) => {
+                      // 保存原始的 OS ID 列表
+                      const originalOsIds =
+                        typeof plan.os === "string" ? plan.os.split("|") : [];
+
+                      const osResponse = await aliceApi.getPlanToOS(
+                        Number(plan.id)
+                      );
+                      if (osResponse.status === 200 && osResponse.data?.data) {
+                        const allOsObjects = osResponse.data.data.flatMap(
+                          (group: any) => group.os_list
+                        );
+                        // 根据原始 ID 列表进行过滤
+                        plan.os = allOsObjects.filter((os: any) =>
+                          originalOsIds.includes(os.id.toString())
+                        );
+                      }
+                      return plan;
+                    })
+                  );
                 }
                 updateStateConfig({ planList: planList || [] }); // 更新状态
               }
@@ -200,7 +219,7 @@ export class AliceService {
                   sshKeyList.forEach((sshKey: any) => {
                     sshKey.created_at = convertTimezoneToLocal(
                       sshKey.created_at
-                    ).toLocaleString();
+                    );
                   });
                 }
                 updateStateConfig({ sshKeyList: sshKeyList || [] }); // 更新状态
@@ -214,8 +233,24 @@ export class AliceService {
     );
 
     if (flag === "defaultPlan") {
+      const defaultPlan = this.dependencies.getDefaultPlan();
+      if (defaultPlan) {
+        // 由于旧版插件的 defaultPlan 是 string 类型，需要转换
+        if (typeof defaultPlan.id === "string") {
+          defaultPlan.id = Number(defaultPlan.id);
+        }
+        if (typeof defaultPlan.os === "string") {
+          defaultPlan.os = Number(defaultPlan.os);
+        }
+        if (typeof defaultPlan.time === "string") {
+          defaultPlan.time = Number(defaultPlan.time);
+        }
+        if (typeof defaultPlan.sshKey === "string") {
+          defaultPlan.sshKey = Number(defaultPlan.sshKey);
+        }
+      }
       updateStateConfig({
-        defaultPlan: this.dependencies.getDefaultPlan(),
+        defaultPlan: defaultPlan,
       }); // 更新默认计划
     }
   }
@@ -279,7 +314,7 @@ export class AliceService {
    * @returns 实例状态信息
    */
   public async getInstanceState(
-    instanceId: string
+    instanceId: number
   ): Promise<InstanceState | undefined> {
     try {
       const response = await aliceApi.getInstanceState(instanceId);

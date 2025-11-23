@@ -53,7 +53,7 @@ export const aliceApi = {
    */
   getInstanceList(): Promise<any> {
     return service({
-      url: "/Evo/Instance",
+      url: "/evo/instances",
       method: "GET",
     });
   },
@@ -63,7 +63,7 @@ export const aliceApi = {
    */
   getPlanList(): Promise<any> {
     return service({
-      url: "/Evo/Plan",
+      url: "/evo/plans",
       method: "GET",
     });
   },
@@ -72,26 +72,20 @@ export const aliceApi = {
    * 获取实例状态
    * @param instance_id 实例 ID
    */
-  getInstanceState(instance_id: string): Promise<any> {
+  getInstanceState(instance_id: number): Promise<any> {
     return service({
-      url: "/Evo/State",
-      method: "POST",
-      data: {
-        id: instance_id,
-      },
+      url: `/evo/instances/${instance_id}/state`,
+      method: "GET",
     });
   },
 
   /**
    * 获取系统镜像信息
    */
-  getPlanToOS(plan_id: string): Promise<any> {
+  getPlanToOS(plan_id: number): Promise<any> {
     return service({
-      url: "/Evo/getOSByPlan",
-      method: "POST",
-      data: {
-        plan_id: plan_id,
-      },
+      url: `/evo/plans/${plan_id}/os-images`,
+      method: "GET",
     });
   },
 
@@ -100,7 +94,7 @@ export const aliceApi = {
    */
   getSSHKeyList(): Promise<any> {
     return service({
-      url: "/User/SSHKey",
+      url: "/account/ssh-keys",
       method: "GET",
     });
   },
@@ -110,7 +104,7 @@ export const aliceApi = {
    */
   getEVOPermissions(): Promise<any> {
     return service({
-      url: "/User/EVOPermissions",
+      url: "/evo/permissions",
       method: "GET",
     });
   },
@@ -120,7 +114,7 @@ export const aliceApi = {
    */
   getUserInfo(): Promise<any> {
     return service({
-      url: "/User/Info",
+      url: "/account/profile",
       method: "GET",
     });
   },
@@ -133,23 +127,24 @@ export const aliceApi = {
    * @param sshKey_id 密钥 ID（可选）
    */
   createInstance(
-    product_id: string,
-    os_id: string,
-    time: string,
-    sshKey_id?: string,
+    product_id: number,
+    os_id: number,
+    time: number,
+    sshKey_id?: number,
     bootScript?: string
   ): Promise<any> {
     const params: any = {
       product_id: product_id,
       os_id: os_id,
       time: time,
-      sshKey: sshKey_id,
+      ssh_key_id: sshKey_id,
     };
     if (bootScript) {
-      params.bootScript = bootScript;
+      params.boot_script = bootScript;
     }
+
     return service({
-      url: "/Evo/Deploy",
+      url: "/evo/instances/deploy",
       method: "POST",
       data: params,
     });
@@ -159,13 +154,10 @@ export const aliceApi = {
    * 删除实例
    * @param instance_id 实例 ID
    */
-  deleteInstance(instance_id: string): Promise<any> {
+  deleteInstance(instance_id: number): Promise<any> {
     return service({
-      url: "/Evo/Destroy",
-      method: "POST",
-      data: {
-        id: instance_id,
-      },
+      url: `/evo/instances/${instance_id}`,
+      method: "DELETE",
     });
   },
 
@@ -174,12 +166,11 @@ export const aliceApi = {
    * @param instance_id 实例 ID
    * @param time 需要延长的时间（单位：小时）
    */
-  renewalInstance(instance_id: string, time: string): Promise<any> {
+  renewalInstance(instance_id: number, time: number): Promise<any> {
     return service({
-      url: "/Evo/Renewal",
+      url: `/evo/instances/${instance_id}/renewals`,
       method: "POST",
       data: {
-        id: instance_id,
         time: time,
       },
     });
@@ -195,14 +186,13 @@ export const aliceApi = {
    * poweroff：强制关机
    */
   powerInstance(
-    instance_id: string,
+    instance_id: number,
     action: "boot" | "shutdown" | "restart" | "poweroff"
   ): Promise<any> {
     return service({
-      url: "/Evo/Power",
+      url: `/evo/instances/${instance_id}/power`,
       method: "POST",
       data: {
-        id: instance_id,
         action: action,
       },
     });
@@ -215,41 +205,33 @@ export const aliceApi = {
    * @param sshKey_id 密钥 ID（可选）
    */
   rebulidInstance(
-    instance_id: string,
-    os_id: string,
-    sshKey_id?: string,
+    instance_id: number,
+    os_id: number,
+    sshKey_id?: number,
     bootScript?: string
   ): Promise<any> {
     const params: any = {
-      id: instance_id,
-      os: os_id,
-      sshKey: sshKey_id,
+      os_id: os_id,
+      ssh_key_id: sshKey_id,
     };
     if (bootScript) {
-      params.bootScript = bootScript;
+      params.boot_script = bootScript;
     }
     return service({
-      url: "/Evo/Rebuild",
+      url: `/evo/instances/${instance_id}/rebuild`,
       method: "POST",
       data: params,
     });
   },
   /**
    * 获取命令执行结果
+   * @param instance_id 实例 ID
    * @param command_uid 命令 ID
-   * @param output_base64 是否使用 base64 编码
    */
-  getCommandResult(
-    command_uid: string,
-    output_base64: "true" | "false" = "true"
-  ): Promise<any> {
+  getCommandResult(instance_id: number, command_uid: string): Promise<any> {
     return service({
-      url: "/Command/getResult",
-      method: "POST",
-      data: {
-        command_uid: command_uid,
-        output_base64: output_base64,
-      },
+      url: `/evo/instances/${instance_id}/exec/${command_uid}`,
+      method: "GET",
     });
   },
 };

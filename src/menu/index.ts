@@ -71,15 +71,15 @@ export async function showAddAuthKeyMenu() {
 export async function showCreateInstanceMenu() {
   let default_detail = "暂无默认配置，点击添加";
   const default_plan_config = CONFIG.planList.find(
-    (plan: any) => plan.id.toString() === CONFIG.defaultPlan.id
+    (plan: any) => plan.id === CONFIG.defaultPlan.id
   );
 
   if (default_plan_config) {
     const default_os = default_plan_config.os.find(
-      (os: any) => os.id.toString() === CONFIG.defaultPlan.os
+      (os: any) => os.id === CONFIG.defaultPlan.os
     );
     const default_sshKey = CONFIG.sshKeyList.find(
-      (sshKey: any) => sshKey.id.toString() === CONFIG.defaultPlan.sshKey
+      (sshKey: any) => sshKey.id === CONFIG.defaultPlan.sshKey
     );
     default_detail = `计划: ${default_plan_config?.name || ""} | 系统: ${
       default_os?.name || ""
@@ -209,19 +209,15 @@ async function createInstance(plan: Plan) {
         plan.id,
         plan.os,
         plan.time,
-        plan.sshKey,
+        plan.sshKey || undefined,
         bootScriptContent
       )
       .then(async (response) => {
         const instance = response.data?.data;
         const bootScriptUid = instance.boot_script_uid;
 
-        instance.creation_at = convertTimezoneToLocal(
-          instance.creation_at
-        ).toLocaleString();
-        instance.expiration_at = convertTimezoneToLocal(
-          instance.expiration_at
-        ).toLocaleString();
+        instance.creation_at = convertTimezoneToLocal(instance.creation_at);
+        instance.expiration_at = convertTimezoneToLocal(instance.expiration_at);
         updateStateConfig({ instanceList: [instance] });
 
         await addLogEntry(instance.id, "创建", plan.bootScript, bootScriptUid);
@@ -377,8 +373,8 @@ export async function showControlInstanceMenu(instanceList: any[]) {
       vscode.window.showErrorMessage("没有可控制的实例。");
       return;
     }
-    const instanceId = instanceList[0].id.toString();
-    const instancePlanId = instanceList[0].plan_id.toString();
+    const instanceId = instanceList[0].id;
+    const instancePlanId = instanceList[0].plan_id;
     switch (selectedItem.label) {
       case `$(refresh) 刷新状态`:
         await updateConfig("instance");
@@ -416,7 +412,7 @@ export async function showControlInstanceMenu(instanceList: any[]) {
  * 延长实例时间
  * @param instanceId - 实例 ID
  */
-export async function renewalInstanceItems(instanceId: string) {
+export async function renewalInstanceItems(instanceId: number) {
   const time = await vscode.window.showInputBox({
     title: "输入时间",
     placeHolder: "请输入要延长时间（小时）",
@@ -433,9 +429,9 @@ export async function renewalInstanceItems(instanceId: string) {
   });
   if (time) {
     aliceApi
-      .renewalInstance(instanceId, time)
+      .renewalInstance(instanceId, Number(time))
       .then(async (response) => {
-        if (response.data?.status === 200) {
+        if (response.data?.code === 200) {
           await updateConfig("instance");
           vscode.window.showInformationMessage("实例延长时间成功");
         }
@@ -450,7 +446,7 @@ export async function renewalInstanceItems(instanceId: string) {
  * 删除实例
  * @param instanceId - 实例 ID
  */
-async function deleteInstanceItems(instanceId: string) {
+async function deleteInstanceItems(instanceId: number) {
   const confirm = await vscode.window.showWarningMessage(
     `确定要删除实例 ${instanceId} 吗？`,
     { modal: true },
@@ -460,7 +456,7 @@ async function deleteInstanceItems(instanceId: string) {
     aliceApi
       .deleteInstance(instanceId)
       .then(async (response) => {
-        if (response.data?.status === 200) {
+        if (response.data?.code === 200) {
           await updateConfig("instance");
           vscode.window.showInformationMessage("实例删除成功");
           clearInterval(CONFIG.updateStatusBarInterval); // 停止状态栏更新
@@ -483,7 +479,7 @@ async function deleteInstanceItems(instanceId: string) {
  * @param instanceId - 实例 ID
  * @param planId - 配置 ID
  */
-export async function rebulidInstanceItems(instanceId: string, planId: string) {
+export async function rebulidInstanceItems(instanceId: number, planId: number) {
   const { status, rebulidInfo } = await rebulidInstanceMultiStep(planId);
   if (status === "completed" && rebulidInfo) {
     const bootScriptContent = await getBootScriptContent(
@@ -494,11 +490,11 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
       .rebulidInstance(
         instanceId,
         rebulidInfo.os,
-        rebulidInfo.sshKey,
+        rebulidInfo.sshKey || undefined,
         bootScriptContent
       )
       .then(async (response) => {
-        if (response.data?.status === 200) {
+        if (response.data?.code === 200) {
           const bootScriptUid = response.data?.data.boot_script_uid;
           await addLogEntry(
             instanceId,
@@ -565,7 +561,7 @@ export async function rebulidInstanceItems(instanceId: string, planId: string) {
  * 控制实例电源
  * @param instanceId - 实例 ID
  */
-export async function powerInstanceItems(instanceId: string) {
+export async function powerInstanceItems(instanceId: number) {
   const powerItems: vscode.QuickPickItem[] = [
     { label: "启动", detail: "启动实例" },
     { label: "关闭", detail: "关闭实例" },
@@ -599,7 +595,7 @@ export async function powerInstanceItems(instanceId: string) {
     aliceApi
       .powerInstance(instanceId, action)
       .then(async (response) => {
-        if (response.data?.status === 200) {
+        if (response.data?.code === 200) {
           await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
@@ -648,7 +644,7 @@ export async function powerInstanceItems(instanceId: string) {
  * @param scriptName 脚本名称
  */
 async function pollBootScriptResult(
-  instanceId: string,
+  instanceId: number,
   commandUid: string,
   scriptName: string
 ) {
@@ -658,7 +654,7 @@ async function pollBootScriptResult(
 
   while (attempts < maxAttempts) {
     try {
-      const response = await aliceApi.getCommandResult(commandUid);
+      const response = await aliceApi.getCommandResult(instanceId, commandUid);
       if (response.status === 200 && response.data?.data?.output) {
         const output = response.data.data.output;
         await updateLogEntry(commandUid, "completed", output);
@@ -699,7 +695,7 @@ async function pollBootScriptResult(
  * 显示脚本执行历史菜单
  * @param instanceId 实例 ID
  */
-async function showScriptHistoryMenu(instanceId: string) {
+async function showScriptHistoryMenu(instanceId: number) {
   const history = await getLogEntriesForInstance(instanceId);
   if (history.length === 0) {
     vscode.window.showInformationMessage("该实例没有脚本执行历史记录。");

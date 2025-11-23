@@ -7,7 +7,7 @@ const LOG_FILE_NAME = "boot_script_log.json";
 
 export interface LogEntry {
   id: string; // 使用 command_uid 作为唯一标识
-  instanceId: string;
+  instanceId: number;
   dateTime: string;
   operation: "创建" | "重装";
   scriptName: string;
@@ -90,7 +90,7 @@ async function writeLogFile(logs: LogEntry[]): Promise<void> {
 }
 
 export async function addLogEntry(
-  instanceId: string,
+  instanceId: number,
   operation: "创建" | "重装",
   scriptName: string,
   commandUid: string
@@ -129,7 +129,7 @@ export async function updateLogEntry(
 }
 
 export async function getLogEntriesForInstance(
-  instanceId: string
+  instanceId: number
 ): Promise<LogEntry[]> {
   const logs = await readLogFile();
   return logs.filter((log) => log.instanceId === instanceId);

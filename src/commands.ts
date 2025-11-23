@@ -40,7 +40,7 @@ export const aliceService = new AliceService({
     ),
   openSettings: () =>
     vscode.commands.executeCommand("workbench.action.openSettings", ALICE_ID),
-  showRenewalInstanceMenu: (instanceId: string) =>
+  showRenewalInstanceMenu: (instanceId: number) =>
     renewalInstanceItems(instanceId),
 });
 

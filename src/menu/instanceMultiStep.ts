@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
-import * as path from "path";
 import { Plan, RebuildInfo, CONFIG } from "../alice/config"; // 引入配置文件
 import { getScriptList } from "../utils/getScript";
 
@@ -62,10 +61,10 @@ export async function createInstanceMultiStep(
   default_plan?: Plan
 ): Promise<CreateInstanceResult> {
   const plan: Plan = default_plan || {
-    id: "",
-    os: "",
-    time: "",
-    sshKey: "",
+    id: NaN,
+    os: NaN,
+    time: NaN,
+    sshKey: NaN,
     bootScript: "",
   };
 
@@ -96,7 +95,7 @@ export async function createInstanceMultiStep(
           quickPick.placeholder = "请选择要创建的 Plan";
           quickPick.items = CONFIG.planList.map((p: any) => ({
             label: p.name,
-            description: p.id.toString(),
+            description: p.id,
             detail: `CPU: ${p.cpu} 核, 内存: ${p.memory / 1024} GB, 硬盘: ${
               p.disk
             } GB`,
@@ -107,7 +106,7 @@ export async function createInstanceMultiStep(
           quickPick.title = "第 2 步: 选择 OS";
           quickPick.placeholder = "请选择要安装的 OS";
           const selectedPlanConfig = CONFIG.planList.find(
-            (p: any) => p.id.toString() === plan.id
+            (p: any) => p.id === plan.id
           );
           if (!selectedPlanConfig || !selectedPlanConfig.os) {
             // 错误处理：如果找不到Plan或OS列表
@@ -123,7 +122,7 @@ export async function createInstanceMultiStep(
           items.push(
             ...selectedPlanConfig.os.map((o: any) => ({
               label: o.name,
-              description: o.id.toString(),
+              description: o.id,
               detail: " ",
             }))
           );
@@ -136,7 +135,7 @@ export async function createInstanceMultiStep(
           // 在输入步骤，通常只显示返回按钮（如果有）
           items.push(backItem);
           quickPick.items = items;
-          quickPick.value = plan.time || ""; // 如果之前有值，可以回填
+          quickPick.value = plan.time ? plan.time.toString() : ""; // 如果之前有值，可以回填
           break;
 
         case CreateInstanceStep.SelectSSHKey:
@@ -189,7 +188,7 @@ export async function createInstanceMultiStep(
       switch (currentStep) {
         case CreateInstanceStep.SelectPlan:
           if (selection?.description) {
-            plan.id = selection.description;
+            plan.id = Number(selection.description);
             currentStep = CreateInstanceStep.SelectOS;
             updateView();
           }
@@ -198,7 +197,7 @@ export async function createInstanceMultiStep(
 
         case CreateInstanceStep.SelectOS:
           if (selection?.description) {
-            plan.os = selection.description;
+            plan.os = Number(selection.description);
             currentStep = CreateInstanceStep.EnterTime;
             updateView();
           }
@@ -215,7 +214,7 @@ export async function createInstanceMultiStep(
           } else if (timeNum > CONFIG.evoPermissions.max_time) {
             errorMessage = `时长不能超过 ${CONFIG.evoPermissions.max_time} 小时`;
           } else {
-            plan.time = timeNum.toString();
+            plan.time = timeNum;
             currentStep = CreateInstanceStep.SelectSSHKey;
             updateView(); // 验证通过，进入下一步
             return; // 成功，跳出 onDidAccept
@@ -228,7 +227,7 @@ export async function createInstanceMultiStep(
           // selectedItems[0] 可能不存在 (如果用户直接按 Enter 但没选)
           // description 可能为 '' (选择了 "不使用 SSH Key")
           if (selection) {
-            plan.sshKey = selection.description ?? ""; // 使用 ?? 处理 undefined
+            plan.sshKey = Number(selection.description) || NaN; // 使用 ?? 处理 undefined
             currentStep = CreateInstanceStep.SelectBootScript;
             updateView();
           }
@@ -267,12 +266,12 @@ export async function createInstanceMultiStep(
  * @param rebulidInfo 重建实例的信息
  */
 export async function rebulidInstanceMultiStep(
-  planId: string
+  planId: number
 ): Promise<RebuildInstanceResult> {
   const rebulidInfo: RebuildInfo = {
     planId: planId,
-    os: "",
-    sshKey: "",
+    os: NaN,
+    sshKey: NaN,
     bootScript: "",
   };
   let currentStep: RebulidInstanceStep = RebulidInstanceStep.SelectOS;
@@ -301,7 +300,7 @@ export async function rebulidInstanceMultiStep(
           quickPick.title = "第 1 步: 选择 OS";
           quickPick.placeholder = "请选择要安装的 OS";
           const selectedPlanConfig = CONFIG.planList.find(
-            (p: any) => p.id.toString() === rebulidInfo.planId
+            (p: any) => p.id === rebulidInfo.planId
           );
           if (!selectedPlanConfig || !selectedPlanConfig.os) {
             // 错误处理：如果找不到Plan或OS列表
@@ -372,7 +371,7 @@ export async function rebulidInstanceMultiStep(
       switch (currentStep) {
         case RebulidInstanceStep.SelectOS:
           if (selection?.description) {
-            rebulidInfo.os = selection.description;
+            rebulidInfo.os = Number(selection.description);
             currentStep = RebulidInstanceStep.SelectSSHKey;
             updateView();
           }
@@ -381,7 +380,7 @@ export async function rebulidInstanceMultiStep(
           // selectedItems[0] 可能不存在 (如果用户直接按 Enter 但没选)
           // description 可能为 '' (选择了 "不使用 SSH Key")
           if (selection) {
-            rebulidInfo.sshKey = selection.description ?? ""; // 使用 ?? 处理 undefined
+            rebulidInfo.sshKey = Number(selection.description) || NaN; // 使用 ?? 处理 undefined
             currentStep = RebulidInstanceStep.SelectBootScript;
             updateView();
           }

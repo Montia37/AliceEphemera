@@ -14,16 +14,17 @@ export const SHOW_ALICE_MENU_COMMAND_ID = `${ALICE_ID}.showAliceMenu`;
 
 /**
  * 实例规格接口
- * @property {string} id - 规格 ID
- * @property {string} os - 操作系统 ID
- * @property {string} time - 时长
- * @property {string} sshKey - SSH 密钥
+ * @property {number} id - 规格 ID
+ * @property {number} os - 操作系统 ID
+ * @property {number} time - 时长
+ * @property {number} sshKey - SSH 密钥
+ * @property {string} bootScript - 启动脚本
  */
 export interface Plan {
-  id: string;
-  os: string;
-  time: string;
-  sshKey: string;
+  id: number;
+  os: number;
+  time: number;
+  sshKey: number;
   bootScript: string;
 }
 
@@ -52,9 +53,9 @@ export interface InstanceState {
  * @property {string} sshKey - SSH 密钥
  */
 export interface RebuildInfo {
-  planId: string;
-  os: string;
-  sshKey: string;
+  planId: number;
+  os: number;
+  sshKey: number;
   bootScript: string;
 }
 
@@ -63,7 +64,16 @@ const CLIENT_ID = workspace
   .get("clientId") as string;
 const SECRET = workspace.getConfiguration(ALICE_ID).get("secret") as string;
 
-const DEFAULT_PLAN = workspace.getConfiguration(ALICE_ID).get("plan") as Plan;
+const planConfig = workspace.getConfiguration(ALICE_ID).get("plan") as any;
+const DEFAULT_PLAN: Plan = planConfig
+  ? {
+      id: Number(planConfig.id),
+      os: Number(planConfig.os),
+      time: Number(planConfig.time),
+      sshKey: Number(planConfig.sshKey),
+      bootScript: planConfig.bootScript,
+    }
+  : ({} as Plan);
 
 const AUTO_CONNECT_INSTANCE = workspace
   .getConfiguration(ALICE_ID)
