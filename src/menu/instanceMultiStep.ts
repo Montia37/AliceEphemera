@@ -95,7 +95,7 @@ export async function createInstanceMultiStep(
           quickPick.placeholder = "请选择要创建的 Plan";
           quickPick.items = CONFIG.planList.map((p: any) => ({
             label: p.name,
-            description: p.id,
+            description: p.id.toString(),
             detail: `CPU: ${p.cpu} 核, 内存: ${p.memory / 1024} GB, 硬盘: ${
               p.disk
             } GB`,
@@ -122,7 +122,7 @@ export async function createInstanceMultiStep(
           items.push(
             ...selectedPlanConfig.os.map((o: any) => ({
               label: o.name,
-              description: o.id,
+              description: o.id.toString(),
               detail: " ",
             }))
           );
