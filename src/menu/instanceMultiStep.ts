@@ -60,6 +60,24 @@ const backItem: vscode.QuickPickItem = {
 export async function createInstanceMultiStep(
   default_plan?: Plan
 ): Promise<CreateInstanceResult> {
+  // 检查是否有 EVO 权限
+  if (!CONFIG.hasEvoPermission) {
+    return {
+      status: "error",
+      plan: null,
+      message: "您的账户似乎没有 EVO Cloud 权限，无法创建实例。",
+    };
+  }
+
+  // 检查是否有可用的 Plan
+  if (!CONFIG.planList || CONFIG.planList.length === 0) {
+    return {
+      status: "error",
+      plan: null,
+      message: "没有可用的 Plan，请检查 EVO 权限或刷新配置。",
+    };
+  }
+
   const plan: Plan = default_plan || {
     id: NaN,
     os: NaN,

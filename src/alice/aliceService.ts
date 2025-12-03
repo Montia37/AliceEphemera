@@ -158,17 +158,21 @@ export class AliceService {
                   evoPermissions.allow_packages =
                     evoPermissions.allow_packages.split("|");
                 }
-                updateStateConfig({ evoPermissions: evoPermissions || {} }); // 更新状态
+                updateStateConfig({
+                  evoPermissions: evoPermissions || {},
+                  hasEvoPermission: true,
+                }); // 更新状态
               }
             })
             .catch((error) => {
               if (error.response && error.response.status === 400) {
+                updateStateConfig({ hasEvoPermission: false });
                 this.dependencies
                   .showErrorMessage(
-                    "请确认您的账户具有 EVO Cloud 权限。",
+                    "您的账户似乎没有 EVO Cloud 权限，请检查。",
                     "重试",
                     "检查 Client ID/Secret",
-                    "打开 EVO Cloud 界面"
+                    "访问 EVO Cloud 界面"
                   )
                   .then(async (selection) => {
                     if (selection === "重试") {
@@ -188,6 +192,10 @@ export class AliceService {
               }
               console.error("Error fetching EVO permissions:", error);
             });
+
+          if (!CONFIG.hasEvoPermission) {
+            return; // 如果没有 EVO 权限，停止后续操作
+          }
 
           // 获取计划列表
           await aliceApi
