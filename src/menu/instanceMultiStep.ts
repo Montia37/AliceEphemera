@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import { Plan, RebuildInfo, CONFIG } from "../alice/config"; // 引入配置文件
 import { getScriptList } from "../utils/getScript";
+import { updateConfig } from "../commands";
 
 /**
  * 创建实例的状态机
@@ -65,12 +66,11 @@ export async function createInstanceMultiStep(
     const selection = await vscode.window.showErrorMessage(
       "您的账户似乎没有 EVO Cloud 权限,无法创建实例。",
       { modal: true },
-      "返回主界面",
       "重新检查权限"
     );
 
     if (selection === "重新检查权限") {
-      await vscode.commands.executeCommand("aliceephemera.updateConfig");
+      await updateConfig();
     }
 
     return {
@@ -85,12 +85,11 @@ export async function createInstanceMultiStep(
     const selection = await vscode.window.showErrorMessage(
       "没有可用的 Plan,请检查 EVO 权限或刷新配置。",
       { modal: true },
-      "返回主界面",
       "重新检查权限"
     );
 
     if (selection === "重新检查权限") {
-      await vscode.commands.executeCommand("aliceephemera.updateConfig");
+      await updateConfig();
     }
 
     return {
