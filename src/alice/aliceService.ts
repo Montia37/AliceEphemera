@@ -179,7 +179,7 @@ export class AliceService {
                       await this.updateConfig(flag);
                     } else if (selection === "检查 Client ID/Secret") {
                       this.dependencies.openSettings();
-                    } else if (selection === "打开 EVO Cloud 界面") {
+                    } else if (selection === "访问 EVO Cloud 界面") {
                       const vscode = require("vscode");
                       vscode.env.openExternal(
                         vscode.Uri.parse(
