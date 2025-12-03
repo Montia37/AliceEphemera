@@ -105,7 +105,9 @@ export async function showCreateInstanceMenu() {
   const createItems: vscode.QuickPickItem[] = [
     {
       label: `$(refresh) 刷新配置`,
-      detail: "已创建实例，点击刷新配置",
+      detail: CONFIG.hasEvoPermission
+        ? "已创建实例,点击刷新配置"
+        : "重新检查 EVO 权限",
     },
     {
       label: `$(plus) 创建实例`,

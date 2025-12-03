@@ -62,19 +62,41 @@ export async function createInstanceMultiStep(
 ): Promise<CreateInstanceResult> {
   // 检查是否有 EVO 权限
   if (!CONFIG.hasEvoPermission) {
+    const selection = await vscode.window.showErrorMessage(
+      "您的账户似乎没有 EVO Cloud 权限,无法创建实例。",
+      { modal: true },
+      "返回主界面",
+      "重新检查权限"
+    );
+
+    if (selection === "重新检查权限") {
+      await vscode.commands.executeCommand("aliceephemera.updateConfig");
+    }
+
     return {
       status: "error",
       plan: null,
-      message: "您的账户似乎没有 EVO Cloud 权限，无法创建实例。",
+      message: "没有 EVO 权限",
     };
   }
 
   // 检查是否有可用的 Plan
   if (!CONFIG.planList || CONFIG.planList.length === 0) {
+    const selection = await vscode.window.showErrorMessage(
+      "没有可用的 Plan,请检查 EVO 权限或刷新配置。",
+      { modal: true },
+      "返回主界面",
+      "重新检查权限"
+    );
+
+    if (selection === "重新检查权限") {
+      await vscode.commands.executeCommand("aliceephemera.updateConfig");
+    }
+
     return {
       status: "error",
       plan: null,
-      message: "没有可用的 Plan，请检查 EVO 权限或刷新配置。",
+      message: "没有可用的 Plan",
     };
   }
 
