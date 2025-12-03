@@ -162,6 +162,30 @@ export class AliceService {
               }
             })
             .catch((error) => {
+              if (error.response && error.response.status === 400) {
+                this.dependencies
+                  .showErrorMessage(
+                    "请确认您的账户具有 EVO Cloud 权限。",
+                    "重试",
+                    "检查 Client ID/Secret",
+                    "打开 EVO Cloud 界面"
+                  )
+                  .then(async (selection) => {
+                    if (selection === "重试") {
+                      await this.updateConfig(flag);
+                    } else if (selection === "检查 Client ID/Secret") {
+                      this.dependencies.openSettings();
+                    } else if (selection === "打开 EVO Cloud 界面") {
+                      const vscode = require("vscode");
+                      vscode.env.openExternal(
+                        vscode.Uri.parse(
+                          "https://console.alice.sh/ephemera/evo-cloud"
+                        )
+                      );
+                    }
+                  });
+                return;
+              }
               console.error("Error fetching EVO permissions:", error);
             });
 
