@@ -182,22 +182,42 @@ export class AliceService {
                 if (planList && planList.length > 0) {
                   await Promise.all(
                     planList.map(async (plan: any) => {
-                      // 保存原始的 OS ID 列表
+                      // 保存原始的 OS ID 列表 - 修复: 检查 plan.os 是否存在
                       const originalOsIds =
                         typeof plan.os === "string" ? plan.os.split("|") : [];
 
-                      const osResponse = await aliceApi.getPlanToOS(
-                        Number(plan.id)
-                      );
-                      if (osResponse.status === 200 && osResponse.data?.data) {
-                        const allOsObjects = osResponse.data.data.flatMap(
-                          (group: any) => group.os_list
+                      try {
+                        const osResponse = await aliceApi.getPlanToOS(
+                          Number(plan.id)
                         );
-                        // 根据原始 ID 列表进行过滤
-                        plan.os = allOsObjects.filter((os: any) =>
-                          originalOsIds.includes(os.id.toString())
+                        if (
+                          osResponse.status === 200 &&
+                          osResponse.data?.data
+                        ) {
+                          const allOsObjects = osResponse.data.data.flatMap(
+                            (group: any) => group.os_list || []
+                          );
+
+                          // 如果没有原始 OS ID 列表,则使用所有可用的 OS
+                          if (originalOsIds.length === 0) {
+                            plan.os = allOsObjects;
+                          } else {
+                            // 根据原始 ID 列表进行过滤
+                            plan.os = allOsObjects.filter((os: any) =>
+                              originalOsIds.includes(os.id.toString())
+                            );
+                          }
+                        } else {
+                          plan.os = [];
+                        }
+                      } catch (error) {
+                        console.error(
+                          `Error fetching OS for plan ${plan.id}:`,
+                          error
                         );
+                        plan.os = [];
                       }
+
                       return plan;
                     })
                   );
