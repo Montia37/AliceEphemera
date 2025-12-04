@@ -158,8 +158,24 @@ export async function createInstanceMultiStep(
             return; // 提前退出 updateView
           }
           items.push(backItem); // 添加返回按钮
+
+          // 修复：确保 os 是数组，并且有数据
+          const osList = Array.isArray(selectedPlanConfig.os)
+            ? selectedPlanConfig.os
+            : [];
+
+          if (osList.length === 0) {
+            resolve({
+              status: "error",
+              plan: null,
+              message: `Plan ID ${plan.id} 没有可用的操作系统。`,
+            });
+            quickPick.hide();
+            return;
+          }
+
           items.push(
-            ...selectedPlanConfig.os.map((o: any) => ({
+            ...osList.map((o: any) => ({
               label: o.name,
               description: o.id.toString(),
               detail: " ",
@@ -351,8 +367,24 @@ export async function rebulidInstanceMultiStep(
             quickPick.hide();
             return; // 提前退出 updateView
           }
+
+          // 修复：确保 os 是数组，并且有数据
+          const osListRebuild = Array.isArray(selectedPlanConfig.os)
+            ? selectedPlanConfig.os
+            : [];
+
+          if (osListRebuild.length === 0) {
+            resolve({
+              status: "error",
+              rebulidInfo: null,
+              message: `Plan ID ${rebulidInfo.planId} 没有可用的操作系统。`,
+            });
+            quickPick.hide();
+            return;
+          }
+
           items.push(
-            ...selectedPlanConfig.os.map((o: any) => ({
+            ...osListRebuild.map((o: any) => ({
               label: o.name,
               description: o.id.toString(),
               detail: " ",
