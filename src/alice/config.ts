@@ -94,6 +94,7 @@ export const CONFIG = {
   autoConnectInstanceHost: AUTO_CONNECT_INSTANCE_HOST,
   bootScriptPath: BOOT_SCRIPT_PATH,
   defaultPlan: DEFAULT_PLAN,
+  hasEvoPermission: false,
   evoPermissions: {} as any,
   instanceList: [] as any[],
   planList: [] as any[],

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import { Plan, RebuildInfo, CONFIG } from "../alice/config"; // 引入配置文件
 import { getScriptList } from "../utils/getScript";
+import { updateConfig } from "../commands";
 
 /**
  * 创建实例的状态机
@@ -60,6 +61,44 @@ const backItem: vscode.QuickPickItem = {
 export async function createInstanceMultiStep(
   default_plan?: Plan
 ): Promise<CreateInstanceResult> {
+  // 检查是否有 EVO 权限
+  if (!CONFIG.hasEvoPermission) {
+    const selection = await vscode.window.showErrorMessage(
+      "您的账户似乎没有 EVO Cloud 权限,无法创建实例。",
+      { modal: true },
+      "重新检查权限"
+    );
+
+    if (selection === "重新检查权限") {
+      await updateConfig();
+    }
+
+    return {
+      status: "error",
+      plan: null,
+      message: "没有 EVO 权限",
+    };
+  }
+
+  // 检查是否有可用的 Plan
+  if (!CONFIG.planList || CONFIG.planList.length === 0) {
+    const selection = await vscode.window.showErrorMessage(
+      "没有可用的 Plan,请检查 EVO 权限或刷新配置。",
+      { modal: true },
+      "重新检查权限"
+    );
+
+    if (selection === "重新检查权限") {
+      await updateConfig();
+    }
+
+    return {
+      status: "error",
+      plan: null,
+      message: "没有可用的 Plan",
+    };
+  }
+
   const plan: Plan = default_plan || {
     id: NaN,
     os: NaN,
